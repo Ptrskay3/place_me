@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crate::point::Point;
 use crate::rangestack::RangeStack;
 use crate::ray::Ray;
@@ -17,6 +19,8 @@ impl Circle {
     pub fn arclength_spanned_by(&self, r1: &Ray, r2: &Ray) -> f64 {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
         let dist = r1.origin.distance_from(&r2.origin);
+        let range_stack = self.range_stack.clone();
+
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
 
@@ -26,6 +30,18 @@ impl Circle {
         let t = self.hit(&r1).unwrap();
         let point = r1.at(t);
         radius / (center.x - point.x).acos()
+    }
+
+    pub fn hit_interval(&self, r1: &Ray, r2: &Ray) -> (f64, f64) {
+        let angle1 = self.hit_angle(r1);
+        let angle2 = self.hit_angle(r2);
+
+        match angle1.partial_cmp(&angle2) {
+            Some(Ordering::Less) => (angle1, angle2),
+            Some(Ordering::Equal) => (angle1, angle2),
+            Some(Ordering::Greater) => (angle2, angle1),
+            None => (0.0, 0.0),
+        }
     }
 }
 
