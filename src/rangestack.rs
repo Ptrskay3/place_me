@@ -3,6 +3,8 @@
 use std::iter::FromIterator;
 use std::{cmp, fmt};
 
+use rayon::prelude::*;
+
 #[derive(Debug, Copy, Clone)]
 pub struct Range {
     pub start: f64,
@@ -10,7 +12,7 @@ pub struct Range {
 }
 
 impl Range {
-    fn new(start: f64, end: f64) -> Range {
+    pub fn new(start: f64, end: f64) -> Range {
         Range { start, end }
     }
 
@@ -41,7 +43,7 @@ pub struct RangeStack {
 }
 
 impl RangeStack {
-    fn add(&mut self, range: &Range) {
+    pub fn add(&mut self, range: &Range) {
         if let Some(last) = self.ranges.last_mut() {
             if last.overlaps(range) {
                 last.merge(range);
@@ -50,6 +52,10 @@ impl RangeStack {
         }
 
         self.ranges.push(*range);
+    }
+
+    pub fn length(&self) -> f64 {
+        self.ranges.par_iter().map(|r| r.end - r.start).sum()
     }
 }
 

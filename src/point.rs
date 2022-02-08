@@ -9,6 +9,9 @@ pub struct Point {
 }
 
 impl Point {
+    pub fn new(x: f64, y: f64) -> Self {
+        Self { x, y }
+    }
     pub fn zero() -> Self {
         Self { x: 0., y: 0. }
     }

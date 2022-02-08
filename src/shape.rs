@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::point::Point;
-use crate::rangestack::RangeStack;
+use crate::rangestack::{Range, RangeStack};
 use crate::ray::Ray;
 use crate::vector::Vector;
 
@@ -16,10 +16,11 @@ pub struct Circle {
 }
 
 impl Circle {
-    pub fn arclength_spanned_by(&self, r1: &Ray, r2: &Ray) -> f64 {
+    pub fn arclength_spanned_by(&mut self, r1: &Ray, r2: &Ray) -> f64 {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
         let dist = r1.origin.distance_from(&r2.origin);
-        let range_stack = self.range_stack.clone();
+        let (theta1, theta2) = self.hit_interval(r1, r2);
+        self.range_stack.add(&Range::new(theta1, theta2));
 
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
