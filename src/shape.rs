@@ -1,4 +1,5 @@
 use crate::point::Point;
+use crate::rangestack::RangeStack;
 use crate::ray::Ray;
 use crate::vector::Vector;
 
@@ -9,14 +10,22 @@ pub trait Hittable {
 pub struct Circle {
     pub center: Point,
     pub radius: f64,
+    pub range_stack: RangeStack,
 }
 
 impl Circle {
-    pub fn arclength_spanned_by(&self, _r1: &Ray, _r2: &Ray) -> f64 {
+    pub fn arclength_spanned_by(&self, r1: &Ray, r2: &Ray) -> f64 {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
-        let Self { radius, center } = self;
-        let dist: f64 = todo!();
-        2.0 * radius * (dist / (2.0 * radius)).asin()
+        let dist = r1.origin.distance_from(&r2.origin);
+        2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
+    }
+
+    pub fn hit_angle(&self, r1: &Ray) -> f64 {
+        let center = &self.center;
+        let radius = &self.radius;
+        let t = self.hit(&r1).unwrap();
+        let point = r1.at(t);
+        radius / (center.x - point.x).acos()
     }
 }
 

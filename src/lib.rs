@@ -1,5 +1,6 @@
 pub mod field;
 pub mod point;
+pub mod rangestack;
 pub mod ray;
 pub mod sensor;
 pub mod shape;
