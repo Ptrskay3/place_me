@@ -1,17 +1,24 @@
-use crate::point::Point;
 use crate::ray::Ray;
 use crate::sensor::Sensor;
 use crate::shape::{Circle, Hittable, Intersection};
 
+#[derive(Debug, Clone)]
 pub struct Field {
     pub circles: Vec<Circle>,
     pub sensor: Sensor,
     pub width: u32,
     pub height: u32,
-    pub origin: Point,
 }
 
 impl Field {
+    pub fn new(circles: Vec<Circle>, sensor: Sensor, width: u32, height: u32) -> Self {
+        Self {
+            circles,
+            sensor,
+            width,
+            height,
+        }
+    }
     pub fn trace(&mut self, ray: &Ray) -> Option<Intersection> {
         self.circles
             .iter_mut()
@@ -22,8 +29,10 @@ impl Field {
 
 pub fn cast_ray(field: &mut Field, ray: &Ray) {
     let res = field.sensor.res;
-    let intersection = field.trace(ray).unwrap();
-    let element = intersection.element;
-    let range = element.approx_hitbox_angle(ray, res);
-    element.range_stack.add_unchecked(&range);
+    if let Some(intersection) = field.trace(ray) {
+        // println!("got intersection {:?}", intersection);
+        let element = intersection.element;
+        let range = element.approx_hitbox_angle(ray, res);
+        element.range_stack.add_unchecked(&range);
+    };
 }

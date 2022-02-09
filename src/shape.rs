@@ -9,6 +9,7 @@ pub trait Hittable {
     fn hit(&self, ray: &Ray) -> Option<f64>;
 }
 
+#[derive(Debug, Clone)]
 pub struct Circle {
     pub center: Point,
     pub radius: f64,
@@ -16,6 +17,14 @@ pub struct Circle {
 }
 
 impl Circle {
+    pub fn new(center: Point, radius: f64, range_stack: RangeStack) -> Self {
+        Self {
+            center,
+            radius,
+            range_stack,
+        }
+    }
+
     pub fn arclength_spanned_by(&mut self, r1: &Ray, r2: &Ray) -> f64 {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
         let dist = r1.origin.distance_from(&r2.origin);
@@ -25,14 +34,14 @@ impl Circle {
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
 
-    pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: i32) -> Range {
+    pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: u32) -> Range {
         let center = &self.center;
         let radius = &self.radius;
         let hit_radius = self.hit(ray).unwrap();
         let hit_point = ray.at(hit_radius);
-        let alpha = radius / (center.x - hit_point.x).acos();
+        let alpha = (radius / (center.x - hit_point.x)).acos();
         let hitbox_angle = 2.0 * std::f64::consts::PI * hit_radius / (resolution as f64 * radius);
-
+        // println!("this is hit with angle {:?} rad", hitbox_angle);
         Range::new(alpha - hitbox_angle / 2.0, alpha + hitbox_angle / 2.0)
     }
 
@@ -92,6 +101,7 @@ impl Hittable for Circle {
     }
 }
 
+#[derive(Debug)]
 pub struct Intersection<'a> {
     pub distance: f64,
     pub element: &'a mut Circle,

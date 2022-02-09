@@ -43,6 +43,10 @@ pub struct RangeStack {
 }
 
 impl RangeStack {
+    pub fn new() -> RangeStack {
+        RangeStack { ranges: Vec::new() }
+    }
+
     fn add(&mut self, range: &Range) {
         if let Some(last) = self.ranges.last_mut() {
             if last.overlaps(range) {

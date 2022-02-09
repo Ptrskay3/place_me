@@ -4,7 +4,7 @@ use crate::{point::Point, ray::Ray, vector::Vector};
 pub struct Sensor {
     pub origin: Point,
     pub rays: Vec<Ray>,
-    pub res: i32,
+    pub res: u32,
 }
 
 impl Sensor {
@@ -16,7 +16,7 @@ impl Sensor {
         }
     }
 
-    pub fn with_resolution(&self, res: i32) -> Self {
+    pub fn with_resolution(&self, res: u32) -> Self {
         let steps = 2.0 * std::f64::consts::PI / res as f64;
         let rays = (0..res)
             .map(|i| {
@@ -40,18 +40,18 @@ impl Sensor {
 
     pub fn coordinates_along_circumference(
         &self,
-        x: i32,
-        y: i32,
+        width: u32,
+        height: u32,
         pixel_step: usize,
-    ) -> (Vec<i32>, Vec<i32>) {
-        let bottom_x = (0..x).step_by(pixel_step);
+    ) -> (Vec<u32>, Vec<u32>) {
+        let bottom_x = (0..width).step_by(pixel_step);
         let x_dim = bottom_x.len();
-        let right_y = (0..y).step_by(pixel_step);
+        let right_y = (0..height).step_by(pixel_step);
         let y_dim = right_y.len();
-        let right_x = vec![x; y_dim];
+        let right_x = vec![width; y_dim];
         let left_x = vec![0; y_dim];
         let bottom_y = vec![0; x_dim];
-        let top_y = vec![y; x_dim];
+        let top_y = vec![height; x_dim];
         (
             bottom_x
                 .clone()
@@ -68,7 +68,7 @@ impl Sensor {
         )
     }
 
-    pub fn move_to(&mut self, x: i32, y: i32) {
+    pub fn move_to(&mut self, x: u32, y: u32) {
         self.origin = Point::new(f64::from(x), f64::from(y));
     }
 }
