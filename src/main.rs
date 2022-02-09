@@ -17,12 +17,11 @@ const HEIGHT: u32 = 1080;
 const RESOLUTION: u32 = 2880;
 
 fn main() {
-    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
-    let circles = vec![shape::Circle::new(
-        point::Point::new(2722.0, 472.0),
-        70.0,
-        RangeStack::new(),
-    )];
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
+    let circles = vec![
+        shape::Circle::new(point::Point::new(1920.0, 540.0), 250.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(2570.0, 540.0), 250.0, RangeStack::new()),
+    ];
 
     let full_arclength = FULL_CIRCLE * circles.len() as f64;
 
@@ -46,7 +45,7 @@ fn main() {
         //     "rangestack outside is {:?}",
         //     field.circles[0].range_stack.ranges
         // );
-        let circles_saved = field.circles.clone();
+        let restore = field.circles.clone();
 
         x_range.iter().zip(y_range.clone()).for_each(|(&x2, y2)| {
             let sensor2 = Sensor::new_at(&point::Point::new(x2 as f64, y2 as f64))
@@ -70,8 +69,6 @@ fn main() {
             //     y2,
             //     field.circles[0].range_stack.ranges.len()
             // );
-            field.circles = circles_saved.clone();
-
             let covered: f64 = field
                 .circles
                 .iter()
@@ -93,6 +90,7 @@ fn main() {
                 x,
                 y,
             );
+            field.circles = restore.clone();
         });
 
         // let covered: f64 = field

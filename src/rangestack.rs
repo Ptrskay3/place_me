@@ -44,12 +44,18 @@ pub struct RangeStack {
     pub ranges: Vec<Range>,
 }
 
+impl Default for RangeStack {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RangeStack {
     pub fn new() -> RangeStack {
         RangeStack { ranges: Vec::new() }
     }
 
-    fn add(&mut self, range: &Range) {
+    fn merging_add(&mut self, range: &Range) {
         if let Some(last) = self.ranges.last_mut() {
             if last.overlaps(range) {
                 last.merge(range);
@@ -60,14 +66,15 @@ impl RangeStack {
         self.ranges.push(*range);
     }
 
-    pub fn add_unchecked(&mut self, range: &Range) {
+    pub fn add(&mut self, range: &Range) {
         if range.end < range.start {
-            self.add_unchecked(&Range::new(range.end, range.start));
+            self.add(&Range::new(range.end, range.start));
             return;
         }
         self.ranges.push(*range);
     }
 
+    /// Add a range to the stack, wrapping around 2 * PI.
     pub fn wrapping_add(&mut self, range: &Range) {
         let end = range.end;
         let start = range.start;
@@ -75,22 +82,22 @@ impl RangeStack {
             (true, true) => {
                 let end_overlap = end - TWOPI;
                 let start_overlap = TWOPI + start;
-                self.add_unchecked(&Range::new(TWOPI - start, end - TWOPI));
-                self.add_unchecked(&Range::new(0.0, end_overlap));
-                self.add_unchecked(&Range::new(start_overlap, TWOPI));
+                self.add(&Range::new(TWOPI - start, end - TWOPI));
+                self.add(&Range::new(0.0, end_overlap));
+                self.add(&Range::new(start_overlap, TWOPI));
             }
             (true, false) => {
                 let start_overlap = TWOPI + start;
-                self.add_unchecked(&Range::new(0.0, end));
-                self.add_unchecked(&Range::new(start_overlap, TWOPI));
+                self.add(&Range::new(0.0, end));
+                self.add(&Range::new(start_overlap, TWOPI));
             }
             (false, true) => {
                 let end_overlap = end - TWOPI;
-                self.add_unchecked(&Range::new(start, end - TWOPI));
-                self.add_unchecked(&Range::new(0.0, end_overlap));
+                self.add(&Range::new(start, end - TWOPI));
+                self.add(&Range::new(0.0, end_overlap));
             }
             (false, false) => {
-                self.add_unchecked(range);
+                self.add(range);
             }
         }
     }
@@ -124,7 +131,7 @@ impl FromIterator<Range> for RangeStack {
         let mut range_stack = RangeStack { ranges: Vec::new() };
 
         for range in &raw_ranges {
-            range_stack.add(range);
+            range_stack.merging_add(range);
         }
 
         range_stack
@@ -146,7 +153,7 @@ impl<'p> FromParallelIterator<&'p Range> for RangeStack {
         let mut range_stack = RangeStack { ranges: Vec::new() };
 
         for range in &raw_ranges {
-            range_stack.add(range);
+            range_stack.merging_add(range);
         }
 
         range_stack
