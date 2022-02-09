@@ -3,6 +3,8 @@
 use std::iter::FromIterator;
 use std::{cmp, fmt};
 
+use crate::shape::TWOPI;
+
 use rayon::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
@@ -64,6 +66,33 @@ impl RangeStack {
             return;
         }
         self.ranges.push(*range);
+    }
+
+    pub fn wrapping_add(&mut self, range: &Range) {
+        let end = range.end;
+        let start = range.start;
+        match (start < 0.0, end > TWOPI) {
+            (true, true) => {
+                let end_overlap = end - TWOPI;
+                let start_overlap = TWOPI + start;
+                self.add_unchecked(&Range::new(TWOPI - start, end - TWOPI));
+                self.add_unchecked(&Range::new(0.0, end_overlap));
+                self.add_unchecked(&Range::new(start_overlap, TWOPI));
+            }
+            (true, false) => {
+                let start_overlap = TWOPI + start;
+                self.add_unchecked(&Range::new(0.0, end));
+                self.add_unchecked(&Range::new(start_overlap, TWOPI));
+            }
+            (false, true) => {
+                let end_overlap = end - TWOPI;
+                self.add_unchecked(&Range::new(start, end - TWOPI));
+                self.add_unchecked(&Range::new(0.0, end_overlap));
+            }
+            (false, false) => {
+                self.add_unchecked(range);
+            }
+        }
     }
 
     pub fn length(&self) -> f64 {

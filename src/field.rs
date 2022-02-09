@@ -31,6 +31,7 @@ pub fn cast_ray(field: &mut Field, ray: &Ray) {
     if let Some(intersection) = field.trace(ray) {
         let element = intersection.element;
         let range = element.approx_hitbox_angle(ray, res);
-        element.range_stack.add_unchecked(&range);
+        element.range_stack.wrapping_add(&range);
+        // element.range_stack.add_unchecked(&range);
     };
 }
