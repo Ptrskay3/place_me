@@ -25,6 +25,17 @@ impl Circle {
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
 
+    pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: i32) -> (f64, f64) {
+        let center = &self.center;
+        let radius = &self.radius;
+        let hit_radius = self.hit(&ray).unwrap();
+        let hit_point = ray.at(hit_radius);
+        let alpha = radius / (center.x - hit_point.x).acos();
+        let hitbox_angle = 2.0 * std::f64::consts::PI * hit_radius / (resolution as f64 * radius);
+
+        (alpha - hitbox_angle / 2.0, alpha + hitbox_angle / 2.0)
+    }
+
     pub fn hit_angle(&self, r1: &Ray) -> f64 {
         let center = &self.center;
         let radius = &self.radius;
@@ -48,7 +59,7 @@ impl Circle {
 
 impl Hittable for Circle {
     fn hit(&self, ray: &Ray) -> Option<f64> {
-        // line between the ray origin and the center of circle
+        // vector between the ray origin and the center of circle
         let l: Vector = self.center - ray.origin;
 
         // length of the hypotenuse
@@ -83,11 +94,11 @@ impl Hittable for Circle {
 
 pub struct Intersection<'a> {
     pub distance: f64,
-    pub element: &'a Circle,
+    pub element: &'a mut Circle,
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new<'b>(distance: f64, element: &'b Circle) -> Intersection<'b> {
+    pub fn new<'b>(distance: f64, element: &'b mut Circle) -> Intersection<'b> {
         if !distance.is_finite() {
             panic!("Intersection must have a finite distance.");
         }

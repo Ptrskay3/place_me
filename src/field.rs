@@ -4,7 +4,6 @@ use crate::sensor::Sensor;
 use crate::shape::{Circle, Hittable, Intersection};
 
 pub struct Field {
-    pub data: Vec<Vec<f64>>,
     pub circles: Vec<Circle>,
     pub sensor: Sensor,
     pub width: u32,
@@ -13,14 +12,14 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn trace(&self, ray: &Ray) -> Option<Intersection> {
+    pub fn trace(&mut self, ray: &Ray) -> Option<Intersection> {
         self.circles
-            .iter()
-            .filter_map(|s| s.hit(ray).map(|d| Intersection::new(d, s)))
+            .iter_mut()
+            .filter_map(|s| s.hit(ray).map(move |d| Intersection::new(d, s)))
             .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap())
     }
 }
 
-pub fn cast_ray(field: &Field, ray: &Ray) {
+pub fn cast_ray(field: &mut Field, ray: &Ray) {
     let _intersection = field.trace(&ray);
 }
