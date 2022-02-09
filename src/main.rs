@@ -2,11 +2,15 @@ pub mod field;
 pub mod point;
 pub mod rangestack;
 pub mod ray;
+pub mod report;
 pub mod sensor;
 pub mod shape;
 pub mod vector;
+use std::sync::{Arc, Mutex};
+
 use field::{cast_ray, Field};
 use rangestack::RangeStack;
+use report::Report;
 use sensor::Sensor;
 
 use rayon::prelude::*;
@@ -17,7 +21,12 @@ const HEIGHT: u32 = 1080;
 const RESOLUTION: u32 = 2880;
 
 fn main() {
-    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
+    let report = Arc::new(Mutex::new(Report {
+        max_coverage: 0.0,
+        sensor_positions: Vec::new(),
+    }));
+
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
     let circles = vec![
         shape::Circle::new(point::Point::new(1920.0, 540.0), 250.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(2570.0, 540.0), 250.0, RangeStack::new()),
@@ -35,16 +44,6 @@ fn main() {
             cast_ray(&mut field, &ray);
         }
 
-        // println!(
-        //     "entering loop with ({:?}, {:?}), rangestack len is {:?}",
-        //     x,
-        //     y,
-        //     field.circles[0].range_stack.ranges.len()
-        // );
-        // println!(
-        //     "rangestack outside is {:?}",
-        //     field.circles[0].range_stack.ranges
-        // );
         let restore = field.circles.clone();
 
         x_range.iter().zip(y_range.clone()).for_each(|(&x2, y2)| {
@@ -56,19 +55,6 @@ fn main() {
                 cast_ray(&mut field, &ray);
             }
 
-            // println!(
-            //     "rangestack inside is {:?}",
-            //     field.circles[0].range_stack.ranges
-            // );
-
-            // println!(
-            //     "inside loop with ({:?}, {:?}), other at ({:?}, {:?}), rangestack len is {:?}",
-            //     x,
-            //     y,
-            //     x2,
-            //     y2,
-            //     field.circles[0].range_stack.ranges.len()
-            // );
             let covered: f64 = field
                 .circles
                 .iter()
@@ -81,47 +67,25 @@ fn main() {
                         .length()
                 })
                 .sum();
-
-            println!(
-                "percentage covered {:?} at ({:?}, {:?}), original at ({:?}, {:?})",
-                100.0 * covered / full_arclength,
-                x2,
-                y2,
-                x,
-                y,
-            );
+            let mut result = report.lock().unwrap();
+            if covered > result.max_coverage {
+                result.max_coverage = covered;
+                result.sensor_positions = vec![
+                    point::Point::new(x as f64, y as f64),
+                    point::Point::new(x2 as f64, y2 as f64),
+                ];
+            }
+            // println!(
+            //     "percentage covered {:?} at ({:?}, {:?}), original at ({:?}, {:?})",
+            //     100.0 * covered / full_arclength,
+            //     x2,
+            //     y2,
+            //     x,
+            //     y,
+            // );
             field.circles = restore.clone();
         });
-
-        // let covered: f64 = field
-        //     .circles
-        //     .iter()
-        //     .map(|circle| {
-        //         circle
-        //             .range_stack
-        //             .ranges
-        //             .par_iter()
-        //             .collect::<RangeStack>()
-        //             .length()
-        //     })
-        //     .sum();
-        // println!("percentage covered {:?}", 100.0 * covered / full_arclength,);
     });
 
-    // let covered: f64 = field
-    //     .circles
-    //     .iter()
-    //     .map(|circle| {
-    //         circle
-    //             .range_stack
-    //             .ranges
-    //             .par_iter()
-    //             .collect::<RangeStack>()
-    //             .length()
-    //     })
-    //     .sum();
-
-    // println!("percentage covered {:?}", 100.0 * covered / full_arclength,);
-
-    // println!("{:?}", field.circles);
+    report.lock().unwrap().pprint(full_arclength);
 }
