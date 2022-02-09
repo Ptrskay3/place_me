@@ -20,12 +20,12 @@ impl Circle {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
         let dist = r1.origin.distance_from(&r2.origin);
         let (theta1, theta2) = self.hit_interval(r1, r2);
-        self.range_stack.add(&Range::new(theta1, theta2));
+        self.range_stack.add_unchecked(&Range::new(theta1, theta2));
 
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
 
-    pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: i32) -> (f64, f64) {
+    pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: i32) -> Range {
         let center = &self.center;
         let radius = &self.radius;
         let hit_radius = self.hit(&ray).unwrap();
@@ -33,7 +33,7 @@ impl Circle {
         let alpha = radius / (center.x - hit_point.x).acos();
         let hitbox_angle = 2.0 * std::f64::consts::PI * hit_radius / (resolution as f64 * radius);
 
-        (alpha - hitbox_angle / 2.0, alpha + hitbox_angle / 2.0)
+        Range::new(alpha - hitbox_angle / 2.0, alpha + hitbox_angle / 2.0)
     }
 
     pub fn hit_angle(&self, r1: &Ray) -> f64 {

@@ -21,5 +21,9 @@ impl Field {
 }
 
 pub fn cast_ray(field: &mut Field, ray: &Ray) {
-    let _intersection = field.trace(&ray);
+    let res = field.sensor.res;
+    let intersection = field.trace(&ray).unwrap();
+    let element = intersection.element;
+    let range = element.approx_hitbox_angle(ray, res);
+    element.range_stack.add_unchecked(&range);
 }

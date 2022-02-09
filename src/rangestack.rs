@@ -43,7 +43,7 @@ pub struct RangeStack {
 }
 
 impl RangeStack {
-    pub fn add(&mut self, range: &Range) {
+    fn add(&mut self, range: &Range) {
         if let Some(last) = self.ranges.last_mut() {
             if last.overlaps(range) {
                 last.merge(range);
@@ -51,6 +51,10 @@ impl RangeStack {
             }
         }
 
+        self.ranges.push(*range);
+    }
+
+    pub fn add_unchecked(&mut self, range: &Range) {
         self.ranges.push(*range);
     }
 
