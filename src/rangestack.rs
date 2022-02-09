@@ -80,11 +80,11 @@ impl RangeStack {
         let start = range.start;
         match (start < 0.0, end > TWOPI) {
             (true, true) => {
-                let end_overlap = end - TWOPI;
-                let start_overlap = TWOPI + start;
-                self.add(&Range::new(TWOPI - start, end - TWOPI));
-                self.add(&Range::new(0.0, end_overlap));
-                self.add(&Range::new(start_overlap, TWOPI));
+                // Practically this is unreachable, because there's no way
+                // for a ray to cover the entire circle's area.
+                // However, with extreme nonsense parameters, it might be possible.
+                // If we want to live dangerous, we should insert an `unreachable_unchecked` here.
+                self.add(&Range::new(0.0, TWOPI));
             }
             (true, false) => {
                 let start_overlap = TWOPI + start;
@@ -93,7 +93,7 @@ impl RangeStack {
             }
             (false, true) => {
                 let end_overlap = end - TWOPI;
-                self.add(&Range::new(start, end - TWOPI));
+                self.add(&Range::new(start, TWOPI));
                 self.add(&Range::new(0.0, end_overlap));
             }
             (false, false) => {

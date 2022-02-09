@@ -26,10 +26,11 @@ fn main() {
         sensor_positions: Vec::new(),
     }));
 
-    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
     let circles = vec![
-        shape::Circle::new(point::Point::new(1920.0, 540.0), 250.0, RangeStack::new()),
-        shape::Circle::new(point::Point::new(2570.0, 540.0), 250.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(1920.0, 540.0), 70.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(1920.0, 660.0), 50.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(1400.0, 760.0), 150.0, RangeStack::new()),
     ];
 
     let full_arclength = FULL_CIRCLE * circles.len() as f64;
