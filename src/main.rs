@@ -24,12 +24,13 @@ fn main() {
     let report = Arc::new(Mutex::new(Report {
         max_coverage: 0.0,
         sensor_positions: Vec::new(),
+        extra: Vec::new(),
     }));
 
-    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
     let circles = vec![
-        shape::Circle::new(point::Point::new(1920.0, 540.0), 70.0, RangeStack::new()),
-        shape::Circle::new(point::Point::new(1920.0, 660.0), 50.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(3700.0, 960.0), 140.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(3600.0, 860.0), 100.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(1400.0, 760.0), 150.0, RangeStack::new()),
     ];
 
@@ -75,6 +76,11 @@ fn main() {
                     point::Point::new(x as f64, y as f64),
                     point::Point::new(x2 as f64, y2 as f64),
                 ];
+            } else if covered == result.max_coverage {
+                result.extra.push(vec![
+                    point::Point::new(x as f64, y as f64),
+                    point::Point::new(x2 as f64, y2 as f64),
+                ]);
             }
             // println!(
             //     "percentage covered {:?} at ({:?}, {:?}), original at ({:?}, {:?})",
