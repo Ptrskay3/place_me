@@ -38,15 +38,34 @@ impl Sensor {
         }
     }
 
-    pub fn coordinateg_along_circumference(&mut self, x: i32, pixel_step: usize) -> Vec<i32> {
-        let bottom = (0..x).step_by(pixel_step);
-        let length = bottom.len();
-        let right = vec![x; length];
-        bottom
-            .clone()
-            .chain(right.clone())
-            .chain(bottom)
-            .chain(right)
-            .collect::<Vec<_>>()
+    pub fn coordinates_along_circumference(
+        &self,
+        x: i32,
+        y: i32,
+        pixel_step: usize,
+    ) -> (Vec<i32>, Vec<i32>) {
+        let bottom_x = (0..x).step_by(pixel_step);
+        let x_dim = bottom_x.len();
+        let right_y = (0..y).step_by(pixel_step);
+        let y_dim = right_y.len();
+        let right_x = vec![x; y_dim];
+        let left_x = vec![0; y_dim];
+        let bottom_y = vec![0; x_dim];
+        let top_y = vec![y; x_dim];
+        (
+            bottom_x
+                .clone()
+                .chain(right_x.clone())
+                .chain(bottom_x.rev())
+                .chain(left_x)
+                .collect::<Vec<_>>(),
+            bottom_y
+                .clone()
+                .into_iter()
+                .chain(right_y.clone())
+                .chain(top_y)
+                .chain(right_y.rev())
+                .collect::<Vec<_>>(),
+        )
     }
 }
