@@ -98,6 +98,28 @@ impl FromIterator<Range> for RangeStack {
     }
 }
 
+impl<'p> FromParallelIterator<&'p Range> for RangeStack {
+    fn from_par_iter<I>(iterator: I) -> Self
+    where
+        I: IntoParallelIterator<Item = &'p Range>,
+    {
+        let mut raw_ranges: Vec<_> = iterator.into_par_iter().collect();
+        raw_ranges.sort_by(|a, b| {
+            a.start
+                .partial_cmp(&b.start)
+                .unwrap_or(std::cmp::Ordering::Greater)
+        });
+
+        let mut range_stack = RangeStack { ranges: Vec::new() };
+
+        for range in &raw_ranges {
+            range_stack.add(range);
+        }
+
+        range_stack
+    }
+}
+
 impl<'a> FromIterator<&'a Range> for RangeStack {
     fn from_iter<I>(iterator: I) -> Self
     where

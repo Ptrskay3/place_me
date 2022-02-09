@@ -37,12 +37,12 @@ fn main() {
 
         let covered: f64 = field
             .circles
-            .iter()
+            .par_iter() // using par iter here might be an overkill, as we don't really have that many circles
             .map(|circle| {
                 circle
                     .range_stack
                     .ranges
-                    .iter()
+                    .par_iter()
                     .collect::<RangeStack>()
                     .length()
             })
