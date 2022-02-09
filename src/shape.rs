@@ -39,9 +39,10 @@ impl Circle {
         let radius = &self.radius;
         let hit_radius = self.hit(ray).unwrap();
         let hit_point = ray.at(hit_radius);
-        let alpha = ((hit_point.x - center.x) / radius).acos();
+        let alpha = (hit_point.y - center.y).atan2(hit_point.x - center.x);
+        // println!("alpha {:?}", alpha);
         let hitbox_angle = 2.0 * std::f64::consts::PI * hit_radius / (resolution as f64 * radius);
-        // println!("this is hit with angle {:?} rad", hitbox_angle);
+        println!("hitbox angle {:?}", hitbox_angle);
         Range::new(alpha - hitbox_angle / 2.0, alpha + hitbox_angle / 2.0)
     }
 
