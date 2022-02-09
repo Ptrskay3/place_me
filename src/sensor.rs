@@ -55,17 +55,20 @@ impl Sensor {
         (
             bottom_x
                 .clone()
-                .chain(right_x.clone())
+                .chain(right_x)
                 .chain(bottom_x.rev())
                 .chain(left_x)
                 .collect::<Vec<_>>(),
             bottom_y
-                .clone()
                 .into_iter()
                 .chain(right_y.clone())
                 .chain(top_y)
                 .chain(right_y.rev())
                 .collect::<Vec<_>>(),
         )
+    }
+
+    pub fn move_to(&mut self, x: i32, y: i32) {
+        self.origin = Point::new(f64::from(x), f64::from(y));
     }
 }

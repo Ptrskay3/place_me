@@ -13,7 +13,7 @@ impl Vector {
     }
 
     pub fn length_squared(&self) -> f64 {
-        &self.x * self.x + &self.y * self.y
+        self.x * self.x + self.y * self.y
     }
 
     pub fn length(&self) -> f64 {
@@ -24,13 +24,13 @@ impl Vector {
         let factor = 1.0 / self.length();
 
         Self {
-            x: &self.x * factor,
-            y: &self.y * factor,
+            x: self.x * factor,
+            y: self.y * factor,
         }
     }
 
     pub fn dot(&self, other: &Vector) -> f64 {
-        &self.x * other.x + &self.y * other.y
+        self.x * other.x + self.y * other.y
     }
 
     pub fn as_point(&self) -> Point {

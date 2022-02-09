@@ -28,7 +28,7 @@ impl Circle {
     pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: i32) -> Range {
         let center = &self.center;
         let radius = &self.radius;
-        let hit_radius = self.hit(&ray).unwrap();
+        let hit_radius = self.hit(ray).unwrap();
         let hit_point = ray.at(hit_radius);
         let alpha = radius / (center.x - hit_point.x).acos();
         let hitbox_angle = 2.0 * std::f64::consts::PI * hit_radius / (resolution as f64 * radius);
@@ -39,7 +39,7 @@ impl Circle {
     pub fn hit_angle(&self, r1: &Ray) -> f64 {
         let center = &self.center;
         let radius = &self.radius;
-        let t = self.hit(&r1).unwrap();
+        let t = self.hit(r1).unwrap();
         let point = r1.at(t);
         radius / (center.x - point.x).acos()
     }
@@ -79,7 +79,7 @@ impl Hittable for Circle {
         let t1 = hypo + thc;
 
         if t0 < 0.0 && t1 < 0.0 {
-            return None;
+            None
         } else if t0 < 0.0 {
             Some(t1)
         } else if t1 < 0.0 {
