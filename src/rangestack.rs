@@ -59,6 +59,10 @@ impl RangeStack {
     }
 
     pub fn add_unchecked(&mut self, range: &Range) {
+        if range.end < range.start {
+            self.add_unchecked(&Range::new(range.end, range.start));
+            return;
+        }
         self.ranges.push(*range);
     }
 
@@ -85,7 +89,7 @@ impl FromIterator<Range> for RangeStack {
         raw_ranges.sort_by(|a, b| {
             a.start
                 .partial_cmp(&b.start)
-                .unwrap_or(std::cmp::Ordering::Greater)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         let mut range_stack = RangeStack { ranges: Vec::new() };

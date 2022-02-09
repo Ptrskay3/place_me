@@ -5,6 +5,7 @@ use crate::rangestack::{Range, RangeStack};
 use crate::ray::Ray;
 use crate::vector::Vector;
 
+const TWOPI: f64 = 2.0 * std::f64::consts::PI;
 pub trait Hittable {
     fn hit(&self, ray: &Ray) -> Option<f64>;
 }
@@ -39,11 +40,30 @@ impl Circle {
         let radius = &self.radius;
         let hit_radius = self.hit(ray).unwrap();
         let hit_point = ray.at(hit_radius);
-        let alpha = (hit_point.y - center.y).atan2(hit_point.x - center.x);
-        // println!("alpha {:?}", alpha);
+        let alpha_tick = (hit_point.y - center.y).atan2(hit_point.x - center.x);
+        let alpha = if alpha_tick < 0.0 {
+            alpha_tick + 2.0 * std::f64::consts::PI
+        } else {
+            alpha_tick
+        };
+        // println!("alpha is {:?}", alpha);
         let hitbox_angle = 2.0 * std::f64::consts::PI * hit_radius / (resolution as f64 * radius);
-        println!("hitbox angle {:?}", hitbox_angle);
-        Range::new(alpha - hitbox_angle / 2.0, alpha + hitbox_angle / 2.0)
+        // println!("hitbox angle {:?}", hitbox_angle);
+        // Range::new(
+        //     (alpha - hitbox_angle / 2.0).clamp(0.0, 2.0 * std::f64::consts::PI),
+        //     (alpha + hitbox_angle / 2.0).clamp(0.0, 2.0 * std::f64::consts::PI),
+        // )
+        let _lower = alpha - hitbox_angle / 2.0;
+        let lower = if _lower < 0.0 { TWOPI - _lower } else { _lower };
+        let _upper = alpha + hitbox_angle / 2.0;
+        let upper = if _upper > TWOPI {
+            _upper - TWOPI
+        } else {
+            _upper
+        };
+        let r = Range::new(lower, _upper);
+        // println!("trying to add {:?}", &r);
+        return r;
     }
 
     pub fn hit_angle(&self, r1: &Ray) -> f64 {
