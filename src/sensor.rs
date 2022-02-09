@@ -39,7 +39,6 @@ impl Sensor {
     }
 
     pub fn coordinates_along_circumference(
-        &self,
         width: u32,
         height: u32,
         pixel_step: usize,

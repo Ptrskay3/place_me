@@ -9,38 +9,52 @@ use field::{cast_ray, Field};
 use rangestack::RangeStack;
 use sensor::Sensor;
 
+use rayon::prelude::*;
+
 const FULL_CIRCLE: f64 = 2.0 * std::f64::consts::PI;
+const WIDTH: u32 = 3840;
+const HEIGHT: u32 = 1080;
+const RESOLUTION: u32 = 2880;
 
 fn main() {
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
     let circles = vec![
         shape::Circle::new(point::Point::new(2722.0, 472.0), 70.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(2015.0, 445.0), 70.0, RangeStack::new()),
     ];
-    let sensor = Sensor::new_at(&point::Point::new(1005.0, 0.0)).with_resolution(2880);
 
-    let rays = sensor.rays.clone();
+    let full_arclength = FULL_CIRCLE * circles.len() as f64;
 
-    let mut field = Field::new(circles, sensor, 3840, 1080);
+    x_range.par_iter().zip(y_range).for_each(|(&x, y)| {
+        let sensor =
+            Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(RESOLUTION);
+        let rays = sensor.rays.clone();
+        let mut field = Field::new(circles.clone(), sensor, WIDTH, HEIGHT);
 
-    for ray in rays {
-        cast_ray(&mut field, &ray);
-    }
+        for ray in rays {
+            cast_ray(&mut field, &ray);
+        }
 
-    let full_arclength = FULL_CIRCLE * field.circles.len() as f64;
+        let covered: f64 = field
+            .circles
+            .iter()
+            .map(|circle| {
+                circle
+                    .range_stack
+                    .ranges
+                    .iter()
+                    .collect::<RangeStack>()
+                    .length()
+            })
+            .sum();
 
-    let covered: f64 = field
-        .circles
-        .iter()
-        .map(|circle| {
-            circle
-                .range_stack
-                .ranges
-                .iter()
-                .collect::<RangeStack>()
-                .length()
-        })
-        .sum();
+        println!(
+            "percentage covered {:?} at ({:?}, {:?})",
+            100.0 * covered / full_arclength,
+            x,
+            y
+        );
+    });
 
-    println!("percentage covered {:?}", 100.0 * covered / full_arclength);
     // println!("{:?}", field.circles);
 }
