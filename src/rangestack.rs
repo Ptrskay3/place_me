@@ -1,5 +1,6 @@
 // https://codereview.stackexchange.com/questions/103864/merging-an-overlapping-collection-of-intervals
 
+use std::hint::unreachable_unchecked;
 use std::iter::FromIterator;
 use std::{cmp, fmt};
 
@@ -81,6 +82,8 @@ impl RangeStack {
         if end < start {
             std::mem::swap(&mut start, &mut end);
         }
+        // We always consider the smaller angle that's defined by two points.
+        // For example: [0.2, 5.9] becomes: [0, 0.2] and [5.9, 2 * PI]
         if (end - start) > TWOPI / 2.0 {
             self.add(&Range::new(0.0, start));
             self.add(&Range::new(end, TWOPI));
@@ -92,7 +95,9 @@ impl RangeStack {
                 // for a ray to cover the entire circle's area.
                 // However, with extreme nonsense parameters, it might be possible.
                 // If we want to live dangerous, we should insert an `unreachable_unchecked` here.
-                self.add(&Range::new(0.0, TWOPI));
+                //
+                // Edit we guard this with the condition above.
+                unsafe { unreachable_unchecked() }
             }
             (true, false) => {
                 let start_overlap = TWOPI + start;

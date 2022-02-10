@@ -29,8 +29,14 @@ fn main() {
 
     let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
     let circles = vec![
+        shape::Circle::new(point::Point::new(450., 712.), 70.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(437., 1693.), 70.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(461., 375.), 70.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(539., 1473.), 70.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(279., 425.), 70.0, RangeStack::new()),
+        shape::Circle::new(point::Point::new(140., 1613.), 70.0, RangeStack::new()),
         // shape::Circle::new(point::Point::new(2712., 449.), 400.0, RangeStack::new()),
-        shape::Circle::new(point::Point::new(2015., 445.), 70.0, RangeStack::new()),
+        // shape::Circle::new(point::Point::new(2015., 445.), 70.0, RangeStack::new()),
     ];
 
     let full_arclength = FULL_CIRCLE * circles.len() as f64;
@@ -160,13 +166,14 @@ fn main() {
                     point::Point::new(x2 as f64, y2 as f64),
                 ]);
             }
-            // println!(
-            //     "outter is {:?} (l = {:?}) we see it as those merged as {:?} (l = {:?})",
-            //     outter,
-            //     outter.length(),
-            //     covered_2,
-            //     covered_2.length()
-            // );
+            println!(
+                "percentage covered {:?} at ({:?}, {:?}), other at ({:?}, {:?})",
+                100.0 * covered / full_arclength,
+                x2,
+                y2,
+                x,
+                y,
+            );
             field_res.circles = restore.clone();
         });
     });
