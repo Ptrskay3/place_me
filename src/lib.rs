@@ -9,31 +9,22 @@ pub mod vector;
 
 use std::sync::{Arc, Mutex};
 
+use pyo3::prelude::*;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
+
 use field::{cast_ray, Field};
 use point::Point;
-use pyo3::prelude::*;
 use rangestack::RangeStack;
-use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use report::Report;
 use sensor::Sensor;
 use shape::Circle;
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
-}
-
-/// A Python module implemented in Rust.
 #[pymodule]
 fn place_me(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(run, m)?)?;
     m.add_function(wrap_pyfunction!(run_v2, m)?)?;
     Ok(())
 }
-
-// use pyo3::{exceptions::PyRuntimeError, pymodule, types::PyModule, PyErr, PyResult, Python};
 
 #[pyfunction]
 fn run<'py>(
@@ -148,7 +139,7 @@ fn inner_calculate(
             //         x2,
             //         y2,
             //         x,
-            // y,
+            //         y,
             //     );
             field.circles = restore.clone();
         });
@@ -195,9 +186,17 @@ fn inner_calculate_v2(
         let sensor =
             Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
         let rays = sensor.rays.clone();
+        // An immutable Field used for acquiring the subject circle's uuid.
         let field = Field::new(circles.clone(), resolution, width, height);
+        // A mutable `Field` that's circle field is updated with every iteration.
         let mut field_res = field.clone();
 
+        // Iterating over the rays of the sensor in pairs.
+        // We check whether the pair intersects the same object, and we accumulate the coverage.
+        // TODO: This can be easily optimized later with `std::iter::take_while`.
+        // The idea is to check whether we hit something with the first ray, then iterating until
+        // the same object is hit again. The coverage between last one that's hitting the same object
+        // and the first should give us the result and save us from calculating every consecutive hit.
         rays.windows(2).for_each(|pair| {
             let i1 = cast_ray(&field, &pair[0]);
             let i2 = cast_ray(&field, &pair[1]);
@@ -211,6 +210,8 @@ fn inner_calculate_v2(
             }
         });
 
+        // Copy the state we have in the current iteration for the first sensor. We'll restore this state
+        // inside the seconds sensor's loop on every iteration.
         let restore = field_res.circles.clone();
 
         x_range.iter().zip(y_range.clone()).for_each(|(&x2, y2)| {
@@ -218,6 +219,7 @@ fn inner_calculate_v2(
                 .with_resolution(resolution);
             let rays2 = sensor2.rays.clone();
 
+            // Same logic as above, just for the second sensor.
             rays2.windows(2).for_each(|pair| {
                 let i1 = cast_ray(&field, &pair[0]);
                 let i2 = cast_ray(&field, &pair[1]);
@@ -231,6 +233,7 @@ fn inner_calculate_v2(
                 }
             });
 
+            // Get the full coverage out of the current state.
             let covered: f64 = field_res
                 .circles
                 .iter()
@@ -243,6 +246,8 @@ fn inner_calculate_v2(
                         .length()
                 })
                 .sum();
+
+            // Set the results if the coverage is equal or higher than the previous one.
             let mut result = report.lock().unwrap();
             if covered > result.max_coverage {
                 result.max_coverage = covered;
@@ -256,23 +261,16 @@ fn inner_calculate_v2(
                     point::Point::new(x2 as f64, y2 as f64),
                 ]);
             }
-            // println!(
-            //     "percentage covered {:?} at ({:?}, {:?}), other at ({:?}, {:?})",
-            //     100.0 * covered / full_arclength,
-            //     x2,
-            //     y2,
-            //     x,
-            //     y,
-            // );
             field_res.circles = restore.clone();
         });
     });
 
+    // Report at the end..
     let rep = report.lock().unwrap();
     if rust_print_is_set() {
         rep.pprint(full_arclength);
     }
-    // This is safe, because we have two points as result.
+    // This is safe, because we have exactly two points as result.
     Vec::from([
         rep.sensor_positions[0].x,
         rep.sensor_positions[0].y,

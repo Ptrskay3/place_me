@@ -29,7 +29,7 @@ impl Field {
     }
 
     pub fn update_stack(&mut self, id: Uuid, range: Range) {
-        // unwrapping here is ok, because we always give valid id
+        // unwrapping here is ok, because the caller ensures that the id is valid
         let circle: &mut Circle = self.circles.iter_mut().find(|c| c.id == id).unwrap();
         circle.range_stack.wrapping_add(&range);
     }

@@ -4,7 +4,7 @@ use std::hint::unreachable_unchecked;
 use std::iter::FromIterator;
 use std::{cmp, fmt};
 
-use crate::shape::TWOPI;
+use crate::shape::TWO_PI;
 
 use rayon::prelude::*;
 
@@ -82,14 +82,14 @@ impl RangeStack {
         if end < start {
             std::mem::swap(&mut start, &mut end);
         }
-        // We always consider the smaller angle that's defined by two points.
+        // We always consider the smaller angle that's defined by two points on the circle.
         // For example: [0.2, 5.9] becomes: [0, 0.2] and [5.9, 2 * PI]
-        if (end - start) > TWOPI / 2.0 {
+        if (end - start) > TWO_PI / 2.0 {
             self.add(&Range::new(0.0, start));
-            self.add(&Range::new(end, TWOPI));
+            self.add(&Range::new(end, TWO_PI));
             return;
         }
-        match (start < 0.0, end > TWOPI) {
+        match (start < 0.0, end > TWO_PI) {
             (true, true) => {
                 // Practically this is unreachable, because there's no way
                 // for a ray to cover the entire circle's area.
@@ -100,13 +100,13 @@ impl RangeStack {
                 unsafe { unreachable_unchecked() }
             }
             (true, false) => {
-                let start_overlap = TWOPI + start;
+                let start_overlap = TWO_PI + start;
                 self.add(&Range::new(0.0, end));
-                self.add(&Range::new(start_overlap, TWOPI));
+                self.add(&Range::new(start_overlap, TWO_PI));
             }
             (false, true) => {
-                let end_overlap = end - TWOPI;
-                self.add(&Range::new(start, TWOPI));
+                let end_overlap = end - TWO_PI;
+                self.add(&Range::new(start, TWO_PI));
                 self.add(&Range::new(0.0, end_overlap));
             }
             (false, false) => {

@@ -6,7 +6,7 @@ use crate::ray::Ray;
 use crate::vector::Vector;
 use uuid::Uuid;
 
-pub const TWOPI: f64 = 2.0 * std::f64::consts::PI;
+pub const TWO_PI: f64 = 2.0 * std::f64::consts::PI;
 pub trait Hittable {
     fn hit(&self, ray: &Ray) -> Option<f64>;
 }
@@ -32,17 +32,10 @@ impl Circle {
     pub fn get_range_for_ray_pair(&self, r1: &Ray, r2: &Ray) -> Range {
         let alpha1 = self.hit_angle(r1);
         let alpha2 = self.hit_angle(r2);
-        // println!("a1 {:?} a2 {:?}", alpha1, alpha2);
-        let r = Range::new(alpha1, alpha2);
-
-        // if alpha1 < 0.5 && alpha2 > 5.0 {
-        // println!("alpha 1 {:?}", alpha1);
-        // println!("alpha 2 {:?}", alpha2);
-        // println!("_________added {:?}", r);
-        // }
-        r
+        Range::new(alpha1, alpha2)
     }
 
+    // Unused currently
     pub fn arclength_spanned_by(&mut self, r1: &Ray, r2: &Ray) -> f64 {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
         let dist = r1.origin.distance_from(&r2.origin);
@@ -52,6 +45,7 @@ impl Circle {
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
 
+    // Unused currently (old implementation)
     pub fn approx_hitbox_angle(&self, ray: &Ray, resolution: u32) -> Range {
         let center = &self.center;
         let radius = &self.radius;
@@ -75,18 +69,11 @@ impl Circle {
         let center = &self.center;
         let hit_radius = self.hit(ray).unwrap();
         let hit_point = ray.at(hit_radius);
-        // println!("hp {:?}", hit_point);
         let alpha_tick = (hit_point.y - center.y).atan2(hit_point.x - center.x);
-        // println!("alpha_tick is {:?}", alpha_tick.rem_euclid(TWOPI));
-        // TODO: this is just mod PI?
-        alpha_tick.rem_euclid(TWOPI)
-        // if alpha_tick < 0.0 {
-        // alpha_tick + std::f64::consts::PI
-        // } else {
-        // alpha_tick
-        // }
+        alpha_tick.rem_euclid(TWO_PI)
     }
 
+    // Unused currently
     pub fn hit_interval(&self, r1: &Ray, r2: &Ray) -> (f64, f64) {
         let angle1 = self.hit_angle(r1);
         let angle2 = self.hit_angle(r2);
@@ -107,8 +94,6 @@ impl Hittable for Circle {
 
         // length of the hypotenuse
         let hypo: f64 = l.dot(&ray.direction);
-
-        // distance from the circle (squared)
 
         let dist = l.dot(&l) - (hypo * hypo);
 
