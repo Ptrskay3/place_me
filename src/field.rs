@@ -1,3 +1,6 @@
+use uuid::Uuid;
+
+use crate::rangestack::Range;
 use crate::ray::Ray;
 use crate::shape::{Circle, Hittable, Intersection};
 
@@ -18,19 +21,23 @@ impl Field {
             height,
         }
     }
-    pub fn trace(&mut self, ray: &Ray) -> Option<Intersection> {
+    pub fn trace(&self, ray: &Ray) -> Option<Intersection> {
         self.circles
-            .iter_mut()
-            .filter_map(|s| s.hit(ray).map(move |d| Intersection::new(d, s)))
+            .iter()
+            .filter_map(|s| s.hit(ray).map(|d| Intersection::new(d, s)))
             .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap())
+    }
+
+    pub fn update_stack(&mut self, id: Uuid, range: Range) {
+        // unwrapping here is ok, because we always give valid id
+        let circle: &mut Circle = self.circles.iter_mut().find(|c| c.id == id).unwrap();
+        circle.range_stack.wrapping_add(&range);
     }
 }
 
-pub fn cast_ray(field: &mut Field, ray: &Ray) {
-    let res = field.res;
+pub fn cast_ray<'f>(field: &'f Field, ray: &Ray) -> Option<&'f Circle> {
     if let Some(intersection) = field.trace(ray) {
-        let element = intersection.element;
-        let range = element.approx_hitbox_angle(ray, res);
-        element.range_stack.wrapping_add(&range);
-    };
+        return Some(intersection.element);
+    }
+    None
 }

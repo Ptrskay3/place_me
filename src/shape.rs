@@ -4,6 +4,7 @@ use crate::point::Point;
 use crate::rangestack::{Range, RangeStack};
 use crate::ray::Ray;
 use crate::vector::Vector;
+use uuid::Uuid;
 
 pub const TWOPI: f64 = 2.0 * std::f64::consts::PI;
 pub trait Hittable {
@@ -15,6 +16,7 @@ pub struct Circle {
     pub center: Point,
     pub radius: f64,
     pub range_stack: RangeStack,
+    pub id: Uuid,
 }
 
 impl Circle {
@@ -23,7 +25,22 @@ impl Circle {
             center,
             radius,
             range_stack,
+            id: Uuid::new_v4(),
         }
+    }
+
+    pub fn get_range_for_ray_pair(&self, r1: &Ray, r2: &Ray) -> Range {
+        let alpha1 = self.hit_angle(r1);
+        let alpha2 = self.hit_angle(r2);
+        // println!("a1 {:?} a2 {:?}", alpha1, alpha2);
+        let r = Range::new(alpha1, alpha2);
+
+        // if alpha1 < 0.5 && alpha2 > 5.0 {
+        // println!("alpha 1 {:?}", alpha1);
+        // println!("alpha 2 {:?}", alpha2);
+        // println!("_________added {:?}", r);
+        // }
+        r
     }
 
     pub fn arclength_spanned_by(&mut self, r1: &Ray, r2: &Ray) -> f64 {
@@ -42,7 +59,7 @@ impl Circle {
         let hit_point = ray.at(hit_radius);
         let alpha_tick = (hit_point.y - center.y).atan2(hit_point.x - center.x);
         let alpha = if alpha_tick < 0.0 {
-            alpha_tick + 2.0 * std::f64::consts::PI
+            alpha_tick + std::f64::consts::PI
         } else {
             alpha_tick
         };
@@ -54,12 +71,20 @@ impl Circle {
         Range::new(lower, upper)
     }
 
-    pub fn hit_angle(&self, r1: &Ray) -> f64 {
+    pub fn hit_angle(&self, ray: &Ray) -> f64 {
         let center = &self.center;
-        let radius = &self.radius;
-        let t = self.hit(r1).unwrap();
-        let point = r1.at(t);
-        radius / (center.x - point.x).acos()
+        let hit_radius = self.hit(ray).unwrap();
+        let hit_point = ray.at(hit_radius);
+        // println!("hp {:?}", hit_point);
+        let alpha_tick = (hit_point.y - center.y).atan2(hit_point.x - center.x);
+        // println!("alpha_tick is {:?}", alpha_tick.rem_euclid(TWOPI));
+        // TODO: this is just mod PI?
+        alpha_tick.rem_euclid(TWOPI)
+        // if alpha_tick < 0.0 {
+        // alpha_tick + std::f64::consts::PI
+        // } else {
+        // alpha_tick
+        // }
     }
 
     pub fn hit_interval(&self, r1: &Ray, r2: &Ray) -> (f64, f64) {
@@ -113,11 +138,11 @@ impl Hittable for Circle {
 #[derive(Debug)]
 pub struct Intersection<'a> {
     pub distance: f64,
-    pub element: &'a mut Circle,
+    pub element: &'a Circle,
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new<'b>(distance: f64, element: &'b mut Circle) -> Intersection<'b> {
+    pub fn new<'b>(distance: f64, element: &'b Circle) -> Intersection<'b> {
         if !distance.is_finite() {
             panic!("Intersection must have a finite distance.");
         }

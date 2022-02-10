@@ -10,7 +10,7 @@ pub struct Report {
 impl Report {
     pub fn pprint(&self, full_arclength: f64) {
         let coverage_pretty = 100.0 * self.max_coverage / full_arclength;
-        println!("covered {:?}%", coverage_pretty);
+        println!("\ncovered {:?}%", coverage_pretty);
         println!("optimal positions {:#?}", self.sensor_positions);
         println!("also at {:#?}", self.extra);
     }

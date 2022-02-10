@@ -76,8 +76,16 @@ impl RangeStack {
 
     /// Add a range to the stack, wrapping around 2 * PI.
     pub fn wrapping_add(&mut self, range: &Range) {
-        let end = range.end;
-        let start = range.start;
+        let mut end = range.end;
+        let mut start = range.start;
+        if end < start {
+            std::mem::swap(&mut start, &mut end);
+        }
+        if (end - start) > TWOPI / 2.0 {
+            self.add(&Range::new(0.0, start));
+            self.add(&Range::new(end, TWOPI));
+            return;
+        }
         match (start < 0.0, end > TWOPI) {
             (true, true) => {
                 // Practically this is unreachable, because there's no way
