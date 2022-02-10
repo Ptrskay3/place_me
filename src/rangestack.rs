@@ -68,6 +68,7 @@ impl RangeStack {
     }
 
     pub fn add(&mut self, range: &Range) {
+        // FIXME: this check here is probably irrelevant
         if range.end < range.start {
             self.add(&Range::new(range.end, range.start));
             return;
@@ -83,7 +84,7 @@ impl RangeStack {
             std::mem::swap(&mut start, &mut end);
         }
         // We always consider the smaller angle that's defined by two points on the circle.
-        // For example: [0.2, 5.9] becomes: [0, 0.2] and [5.9, 2 * PI]
+        // For example: [0.2, 5.9] becomes the union of [0, 0.2] and [5.9, 2 * PI].
         if (end - start) > TWO_PI / 2.0 {
             self.add(&Range::new(0.0, start));
             self.add(&Range::new(end, TWO_PI));
@@ -91,12 +92,7 @@ impl RangeStack {
         }
         match (start < 0.0, end > TWO_PI) {
             (true, true) => {
-                // Practically this is unreachable, because there's no way
-                // for a ray to cover the entire circle's area.
-                // However, with extreme nonsense parameters, it might be possible.
-                // If we want to live dangerous, we should insert an `unreachable_unchecked` here.
-                //
-                // Edit we guard this with the condition above.
+                // SAFETY: we guard against this with the condition above.
                 unsafe { unreachable_unchecked() }
             }
             (true, false) => {
