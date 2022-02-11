@@ -67,7 +67,7 @@ impl RangeStack {
         self.ranges.push(*range);
     }
 
-    pub fn add(&mut self, range: &Range) {
+    fn add(&mut self, range: &Range) {
         // FIXME: this check here is probably irrelevant
         if range.end < range.start {
             self.add(&Range::new(range.end, range.start));

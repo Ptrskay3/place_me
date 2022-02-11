@@ -1,3 +1,4 @@
+// TODO: This is kind of bad, some rework needed..
 use crate::point::Point;
 
 #[derive(Debug, Clone)]

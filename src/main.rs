@@ -1,3 +1,5 @@
+//! This file is for testing purposes, ignore it entirely.
+
 pub mod field;
 pub mod point;
 pub mod rangestack;
@@ -16,7 +18,7 @@ use sensor::Sensor;
 use rayon::prelude::*;
 
 const FULL_CIRCLE: f64 = 2.0 * std::f64::consts::PI;
-const WIDTH: u32 = 3840;
+const WIDTH: u32 = 1080;
 const HEIGHT: u32 = 1080;
 const RESOLUTION: u32 = 2880;
 
@@ -27,14 +29,14 @@ fn main() {
         extra: Vec::new(),
     }));
 
-    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 20);
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
     let circles = vec![
         shape::Circle::new(point::Point::new(450., 712.), 70.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(437., 1693.), 70.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(461., 375.), 70.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(539., 1473.), 70.0, RangeStack::new()),
         shape::Circle::new(point::Point::new(279., 425.), 70.0, RangeStack::new()),
-        shape::Circle::new(point::Point::new(140., 1613.), 70.0, RangeStack::new()),
+        // shape::Circle::new(point::Point::new(140., 1613.), 70.0, RangeStack::new()),
         // shape::Circle::new(point::Point::new(2712., 449.), 400.0, RangeStack::new()),
         // shape::Circle::new(point::Point::new(2015., 445.), 70.0, RangeStack::new()),
     ];

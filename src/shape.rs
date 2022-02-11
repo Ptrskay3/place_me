@@ -40,7 +40,7 @@ impl Circle {
         // https://math.stackexchange.com/questions/1595872/arclength-between-two-points-on-a-circle-not-knowing-theta
         let dist = r1.origin.distance_from(&r2.origin);
         let (theta1, theta2) = self.hit_interval(r1, r2);
-        self.range_stack.add(&Range::new(theta1, theta2));
+        self.range_stack.wrapping_add(&Range::new(theta1, theta2));
 
         2.0 * self.radius * (dist / (2.0 * self.radius)).asin()
     }
