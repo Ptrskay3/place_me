@@ -134,51 +134,52 @@ fn main() {
             //     .iter()
             //     .collect::<RangeStack>();
 
-            let covered: f64 = field_res
+            let covered_len = field_res
                 .circles
                 .iter()
                 .map(|circle| {
-                    // println!(
-                    //     "we're at ({:?}, {:?}), ({:?}, {:?}), rs_len is {:?}",
-                    //     x,
-                    //     y,
-                    //     x2,
-                    //     y2,
-                    //     circle.range_stack.ranges.iter().collect::<RangeStack>()
-                    // );
-                    return circle
+                    circle
                         .range_stack
                         .ranges
                         .par_iter()
                         .collect::<RangeStack>()
-                        .length();
+                        .length()
                 })
-                .sum();
+                .sum::<f64>()
+                / full_arclength;
 
+            // The number of seen objects.
+            let seen = field_res
+                .clone()
+                .circles
+                .iter()
+                .take_while(|circle| !circle.range_stack.is_empty())
+                .count();
+
+            println!("we see {:?}", seen);
+            println!("covered {:?}", covered_len);
+            let cov = seen as f64 + covered_len * circles.len() as f64;
+
+            // Set the results if the coverage is equal or higher than the previous one.
             let mut result = report.lock().unwrap();
-            if covered > result.max_coverage {
-                result.max_coverage = covered;
+            if cov > result.max_coverage {
+                result.max_coverage = cov;
                 result.sensor_positions = vec![
                     point::Point::new(x as f64, y as f64),
                     point::Point::new(x2 as f64, y2 as f64),
                 ];
-            } else if covered == result.max_coverage {
+            // TODO: floating-point arithmetic, it's kind of dumb to check for equality
+            } else if cov == result.max_coverage {
                 result.extra.push(vec![
                     point::Point::new(x as f64, y as f64),
                     point::Point::new(x2 as f64, y2 as f64),
                 ]);
             }
-            println!(
-                "percentage covered {:?} at ({:?}, {:?}), other at ({:?}, {:?})",
-                100.0 * covered / full_arclength,
-                x2,
-                y2,
-                x,
-                y,
-            );
             field_res.circles = restore.clone();
         });
     });
 
-    report.lock().unwrap().pprint(full_arclength);
+    // Print report at the end, if RUST_LOG environment variable is set.
+    let rep = report.lock().unwrap();
+    rep.pprint(circles.len());
 }

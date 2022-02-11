@@ -1,3 +1,5 @@
+use std::num;
+
 // TODO: This is kind of bad, some rework needed..
 use crate::point::Point;
 
@@ -9,9 +11,8 @@ pub struct Report {
 }
 
 impl Report {
-    pub fn pprint(&self, full_arclength: f64) {
-        let coverage_pretty = 100.0 * self.max_coverage / full_arclength;
-        println!("\ncovered {:?}%", coverage_pretty);
+    pub fn pprint(&self, num_circles: usize) {
+        println!("\ncovered {:?}/{:?}", self.max_coverage, num_circles * 2);
         println!("optimal positions {:#?}", self.sensor_positions);
         println!("also at {:#?}", self.extra);
     }

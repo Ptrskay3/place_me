@@ -1,4 +1,6 @@
-## Building the project:
+## Building the project
+
+### You'll need:
 
 - Rust (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`, you might need to `rustup override set nightly` inside the project folder)
 

@@ -56,6 +56,10 @@ impl RangeStack {
         RangeStack { ranges: Vec::new() }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.ranges.is_empty()
+    }
+
     fn merging_add(&mut self, range: &Range) {
         if let Some(last) = self.ranges.last_mut() {
             if last.overlaps(range) {
