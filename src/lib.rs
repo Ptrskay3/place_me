@@ -17,7 +17,7 @@ use point::Point;
 use rangestack::RangeStack;
 use report::Report;
 use sensor::Sensor;
-use shape::{Circle, TWO_PI};
+use shape::Circle;
 
 #[pymodule]
 fn place_me(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -150,6 +150,7 @@ fn inner_calculate_v2(
             let cov = seen as f64 + covered_len * circles.len() as f64;
 
             // Set the results if the coverage is equal or higher than the previous one.
+            let report = report.clone();
             let mut result = report.lock().unwrap();
             if cov > result.max_coverage {
                 result.max_coverage = cov;
