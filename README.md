@@ -60,6 +60,10 @@ jupyter-lab
   - resolution: the sensor resolution, defines how many rays are coming out.
   - pixel_step: the discrete pixel step along the image's circumference.
 
+  Returns:
+
+  - [x1, y1, x2, y2]: the coordinates of optimal sensor positions.
+
 - `optimize_v3`:
 
   Find the optimal three sensor positions that maximize coverage using brute-force search. Note that this will run `(2 * (width + height) / pixel_step) ** 3` iterations, so it might take a while.
@@ -67,6 +71,10 @@ jupyter-lab
   Parameters:
 
   The same as `optimize_v2`.
+
+  Returns:
+
+  - [x1, y1, x2, y2, x3, y3]: the coordinates of optimal sensor positions.
 
 ## Implementation details:
 

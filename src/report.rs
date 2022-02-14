@@ -15,6 +15,6 @@ impl Report {
             self.max_coverage,
             num_circles * 2
         );
-        println!("optimal positions {:#?}", self.sensor_positions);
+        println!("✅ optimal positions {:#?}", self.sensor_positions);
     }
 }
