@@ -36,7 +36,7 @@ impl Range {
 
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{},{}]", self.start, self.end)
+        write!(f, "[{}, {}]", self.start, self.end)
     }
 }
 

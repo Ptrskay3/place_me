@@ -23,7 +23,7 @@ source <my_env_name>/bin/activate
 Install Python dependencies
 
 ```bash
-pip3 install numpy scipy matplotlib scikit-learn scikit-image opencv-python jupyterlab ipykernel maturin
+pip3 install numpy scipy matplotlib scikit-learn scikit-image opencv-python jupyterlab ipykernel maturin tqdm
 ```
 
 Register the virtual environment in Jupyter kernels
@@ -43,6 +43,30 @@ Start the jupyter-lab server, and open the included notebook `example.ipynb`, th
 ```bash
 jupyter-lab
 ```
+
+## Functions exposed to Python
+
+- `optimize_v2`:
+
+  Find the optimal two sensor positions that maximize coverage using brute-force search.
+
+  Parameters:
+
+  - xs: list of x coordinates of the circles
+  - ys: list of y coordinates of the circles
+  - radii: list of radii of the circles
+  - width: width of the image
+  - height: height of the image
+  - resolution: the sensor resolution, defines how many rays are coming out.
+  - pixel_step: the discrete pixel step along the image's circumference.
+
+- `optimize_v3`:
+
+  Find the optimal three sensor positions that maximize coverage using brute-force search. Note that this will run `(2 * (width + height) / pixel_step) ** 3` iterations, so it might take a while.
+
+  Parameters:
+
+  The same as `optimize_v2`.
 
 ## Implementation details:
 
