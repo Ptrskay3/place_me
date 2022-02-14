@@ -26,7 +26,6 @@ fn main() {
     let report = Arc::new(Mutex::new(Report {
         max_coverage: 0.0,
         sensor_positions: Vec::new(),
-        extra: Vec::new(),
     }));
 
     let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
@@ -168,12 +167,7 @@ fn main() {
                     point::Point::new(x as f64, y as f64),
                     point::Point::new(x2 as f64, y2 as f64),
                 ];
-            // TODO: floating-point arithmetic, it's kind of dumb to check for equality
-            } else if cov == result.max_coverage {
-                result.extra.push(vec![
-                    point::Point::new(x as f64, y as f64),
-                    point::Point::new(x2 as f64, y2 as f64),
-                ]);
+                // TODO: floating-point arithmetic, it's kind of dumb to check for equality
             }
             field_res.circles = restore.clone();
         });
