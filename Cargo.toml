@@ -1,0 +1,15 @@
+[package]
+name = "place_me"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+name = "place_me"
+crate-type = ["cdylib"]
+
+
+[dependencies]
+pyo3 = { version = "0.15.1", features = ["extension-module"] }
+rayon = "1.0.3"
+numpy = "0.15.1"
+uuid = { version = "0.8.2", features = ["v4"] }
