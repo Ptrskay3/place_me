@@ -142,19 +142,26 @@ impl Hittable for Circle {
 
 impl Hittable for Segment {
     fn hit(&self, ray: &Ray) -> Option<f64> {
-        let (slope, intercept) = self.get_coeffs();
-        let (slope_ray, intercept_ray) = ray.get_coeffs();
-        let factor = (intercept_ray - intercept) / (slope_ray - slope);
-        let point = Point::new(factor, slope * factor + intercept);
-        let ab: Vector = self.p2 - self.p1;
-        let ac = point - self.p1;
-        let kab = ab.dot(&ab);
-        let kac = ab.dot(&ac);
-        if kac >= 0.0 && kac <= kab {
-            println!("we're hitting it at {:?}", point);
-            return Some(point.distance_from(&ray.origin));
+        let (r1, r2) = ray.spanned_points();
+        let determinant =
+            ((r1.x - r2.x) * (self.p1.y - self.p2.y)) - ((r1.y - r2.y) * (self.p1.x - self.p2.x));
+        if -1E-6 <= determinant && determinant <= 1E-6 {
+            return None;
         }
-        None
+
+        let ix = (r1.x * r2.y - r1.y * r2.x) * (self.p1.x - self.p2.x)
+            - (r1.x - r2.x) * (self.p1.x * self.p2.y - self.p1.y * self.p2.x);
+        let iy = (r1.x * r2.y - r1.y * r2.x) * (self.p1.y - self.p2.y)
+            - (r1.y - r2.y) * (self.p1.x * self.p2.y - self.p1.y * self.p2.x);
+        let intersection = Point {
+            x: ix / determinant,
+            y: iy / determinant,
+        };
+        if !intersection.is_aabb() {
+            return None;
+        }
+
+        Some(intersection.distance_from(&ray.origin))
     }
 }
 

@@ -21,4 +21,8 @@ impl Ray {
 
         (slope, intercept)
     }
+
+    pub fn spanned_points(&self) -> (Point, Point) {
+        (self.origin, self.at(4000.0))
+    }
 }

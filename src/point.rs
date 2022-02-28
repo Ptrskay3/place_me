@@ -22,6 +22,10 @@ impl Point {
 
         (dx * dx + dy * dy).sqrt()
     }
+
+    pub fn is_aabb(&self) -> bool {
+        self.x >= 0. && self.y >= 0. && self.x <= 3840. && self.y <= 1080.
+    }
 }
 
 impl Sub<Point> for Point {

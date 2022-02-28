@@ -60,9 +60,6 @@ impl Field {
 
 pub fn cast_ray<'f>(field: &'f Field, ray: &Ray) -> Option<&'f Element> {
     if let Some(intersection) = field.trace(ray) {
-        if let Element::Segment(s) = intersection.element {
-            println!("the closest is {:?}", s);
-        }
         return Some(intersection.element);
     }
     None

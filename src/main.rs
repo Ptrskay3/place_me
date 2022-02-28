@@ -30,23 +30,23 @@ fn main() {
         sensor_coverages: Vec::new(),
     }));
 
-    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 10);
+    let (x_range, y_range) = Sensor::coordinates_along_circumference(WIDTH, HEIGHT, 100);
     let circles = vec![
         Element::Circle(shape::Circle::new(
-            point::Point::new(450., 712.),
-            70.0,
+            point::Point::new(500., 500.),
+            60.0,
             RangeStack::new(),
             "1".to_string(),
         )),
-        Element::Circle(shape::Circle::new(
-            point::Point::new(437., 1693.),
-            70.0,
-            RangeStack::new(),
-            "2".to_string(),
-        )),
+        // Element::Circle(shape::Circle::new(
+        //     point::Point::new(1840., 543.),
+        //     60.0,
+        //     RangeStack::new(),
+        //     "2".to_string(),
+        // )),
         Element::Segment(shape::Segment::new(
-            point::Point::new(0., 940.),
-            point::Point::new(1080., 940.),
+            point::Point::new(750., 0.),
+            point::Point::new(750., 1080.),
         )),
     ];
 
