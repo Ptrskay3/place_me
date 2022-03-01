@@ -144,20 +144,30 @@ impl Hittable for Segment {
     fn hit(&self, ray: &Ray) -> Option<f64> {
         let (r1, r2) = ray.spanned_points();
         let determinant =
-            ((r1.x - r2.x) * (self.p1.y - self.p2.y)) - ((r1.y - r2.y) * (self.p1.x - self.p2.x));
-        if -1E-6 <= determinant && determinant <= 1E-6 {
+            ((self.p1.x - self.p2.x) * (r1.y - r2.y)) - ((self.p1.y - self.p2.y) * (r1.x - r2.x));
+        if determinant.abs() <= 1E-6 {
             return None;
         }
 
-        let ix = (r1.x * r2.y - r1.y * r2.x) * (self.p1.x - self.p2.x)
-            - (r1.x - r2.x) * (self.p1.x * self.p2.y - self.p1.y * self.p2.x);
-        let iy = (r1.x * r2.y - r1.y * r2.x) * (self.p1.y - self.p2.y)
-            - (r1.y - r2.y) * (self.p1.x * self.p2.y - self.p1.y * self.p2.x);
+        let ix = (self.p1.x * self.p2.y - self.p1.y * self.p2.x) * (r1.x - r2.x)
+            - (self.p1.x - self.p2.x) * (r1.x * r2.y - r1.y * r2.x);
+        let iy = (self.p1.x * self.p2.y - self.p1.y * self.p2.x) * (r1.y - r2.y)
+            - (self.p1.y - self.p2.y) * (r1.x * r2.y - r1.y * r2.x);
         let intersection = Point {
             x: ix / determinant,
             y: iy / determinant,
         };
+
         if !intersection.is_aabb() {
+            return None;
+        }
+
+        let ac = self.p1 - intersection;
+        let ab = self.p1 - self.p2;
+
+        let abac = ab.dot(&ac);
+        let abab = ab.dot(&ab);
+        if abac < 0.0 || abac > abab {
             return None;
         }
 

@@ -170,8 +170,16 @@ fn inner_calculate_v1(
 
     let full_circle: f64 = 2.0 * std::f64::consts::PI;
 
+    let (n_circles, _n_segments) =
+        circles
+            .iter()
+            .fold((0, 0), |(n_circles, n_segments), x| match x {
+                Element::Circle(_) => (n_circles + 1, n_segments),
+                Element::Segment(_) => (n_circles, n_segments + 1),
+            });
+
     // `n` circles have `2 * PI * n` angles in total.
-    let full_arclength = full_circle * circles.len() as f64;
+    let full_arclength = full_circle * n_circles as f64;
 
     x_range.par_iter().zip(y_range.clone()).for_each(|(&x, y)| {
         // Place a sensor at the current coordinate pair.
@@ -236,7 +244,10 @@ fn inner_calculate_v1(
             })
             .count();
 
-        let cov = seen as f64 + covered_len * circles.len() as f64;
+        // println!("seen {:?}", seen);
+        // println!("covered len {:?}", covered_len);
+
+        let cov = seen as f64 + covered_len * n_circles as f64;
 
         // Set the results if the coverage is equal or higher than the previous one.
         let report = report.clone();
@@ -252,7 +263,7 @@ fn inner_calculate_v1(
     // Print report at the end, if RUST_LOG environment variable is set.
     let rep = report.lock().unwrap();
     if rust_log_is_set() {
-        rep.pprint(circles.len());
+        rep.pprint(n_circles);
         // println!("covs {:#?}", rep.sensor_coverages);
     }
     // Return the final two positions as 1D array to Python.
@@ -281,8 +292,16 @@ fn inner_calculate_v2(
 
     let full_circle: f64 = 2.0 * std::f64::consts::PI;
 
+    let (n_circles, _n_segments) =
+        circles
+            .iter()
+            .fold((0, 0), |(n_circles, n_segments), x| match x {
+                Element::Circle(_) => (n_circles + 1, n_segments),
+                Element::Segment(_) => (n_circles, n_segments + 1),
+            });
+
     // `n` circles have `2 * PI * n` angles in total.
-    let full_arclength = full_circle * circles.len() as f64;
+    let full_arclength = full_circle * n_circles as f64;
 
     x_range.par_iter().zip(y_range.clone()).for_each(|(&x, y)| {
         // Place a sensor at the current coordinate pair.
@@ -383,7 +402,7 @@ fn inner_calculate_v2(
                 })
                 .count();
 
-            let cov = seen as f64 + covered_len * circles.len() as f64;
+            let cov = seen as f64 + covered_len * n_circles as f64;
 
             // Set the results if the coverage is equal or higher than the previous one.
             let report = report.clone();
@@ -403,7 +422,7 @@ fn inner_calculate_v2(
     // Print report at the end, if RUST_LOG environment variable is set.
     let rep = report.lock().unwrap();
     if rust_log_is_set() {
-        rep.pprint(circles.len());
+        rep.pprint(n_circles);
     }
     // Return the final two positions as 1D array to Python.
     // This is safe, because we have exactly two points as result.
@@ -434,7 +453,16 @@ fn inner_calculate_v3(
 
     let full_circle: f64 = 2.0 * std::f64::consts::PI;
 
-    let full_arclength = full_circle * circles.len() as f64;
+    let (n_circles, _n_segments) =
+        circles
+            .iter()
+            .fold((0, 0), |(n_circles, n_segments), x| match x {
+                Element::Circle(_) => (n_circles + 1, n_segments),
+                Element::Segment(_) => (n_circles, n_segments + 1),
+            });
+
+    // `n` circles have `2 * PI * n` angles in total.
+    let full_arclength = full_circle * n_circles as f64;
 
     x_range.par_iter().zip(y_range.clone()).for_each(|(&x, y)| {
         let mut sensor =
@@ -554,7 +582,7 @@ fn inner_calculate_v3(
                     })
                     .count();
 
-                let cov = seen as f64 + covered_len * circles.len() as f64;
+                let cov = seen as f64 + covered_len * n_circles as f64;
 
                 let report = report.clone();
                 let mut result = report.lock().unwrap();
@@ -580,7 +608,7 @@ fn inner_calculate_v3(
 
     let rep = report.lock().unwrap();
     if rust_log_is_set() {
-        rep.pprint(circles.len());
+        rep.pprint(n_circles);
     }
     (
         Vec::from([
