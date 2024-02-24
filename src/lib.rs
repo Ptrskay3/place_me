@@ -63,7 +63,7 @@ fn optimize_v1<'py>(
 }
 
 #[pyfunction]
-fn optimize_v2<'py>(
+fn optimize_v2(
     _py: Python<'_>,
     ys: Vec<f64>,
     xs: Vec<f64>,
@@ -95,7 +95,7 @@ fn optimize_v2<'py>(
 }
 
 #[pyfunction]
-fn optimize_v3<'py>(
+fn optimize_v3(
     _py: Python<'_>,
     ys: Vec<f64>,
     xs: Vec<f64>,
@@ -134,7 +134,7 @@ fn initialize_elements(
     ids: &[String],
     obstacles: &[f64],
 ) -> Vec<Element> {
-    let mut elements = Vec::new();
+    let mut elements = Vec::with_capacity(x.len() + obstacles.len() / 4);
     for i in 0..x.len() {
         elements.push(Element::Circle(Circle::new(
             Point::new(x[i], y[i]),
@@ -181,12 +181,10 @@ fn inner_calculate_v1(
     // `n` circles have `2 * PI * n` angles in total.
     let full_arclength = full_circle * n_circles as f64;
 
-    x_range.par_iter().zip(y_range.clone()).for_each(|(&x, y)| {
+    x_range.par_iter().zip(y_range).for_each(|(&x, y)| {
         // Place a sensor at the current coordinate pair.
         let mut sensor =
             Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
-        let rays = sensor.rays.clone();
-        // An immutable Field used for acquiring the subject circle's uuid.
         let field = Field::new(circles.clone(), resolution, width, height);
         // A mutable `Field` that's circle field is updated with every iteration.
         let mut field_res = field.clone();
@@ -197,14 +195,15 @@ fn inner_calculate_v1(
         // The idea is to check whether we hit something with the first ray, then iterating until
         // the same object is hit again. The coverage between last one that's hitting the same object
         // and the first should give us the result and save us from calculating every consecutive hit.
-        rays.windows(2).for_each(|pair| {
+        // TODO: can be par_windows, if we introduce an Arc<Mutex<T>>, or maybe a channel
+        sensor.rays.windows(2).for_each(|pair| {
             let i1 = cast_ray(&field, &pair[0]);
             let i2 = cast_ray(&field, &pair[1]);
             if let Some(Element::Circle(elem1)) = i1 {
                 if let Some(Element::Circle(elem2)) = i2 {
                     if elem1.id == elem2.id {
                         let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                        field_res.update_stack(elem1.id.clone(), range);
+                        field_res.update_stack(&elem1.id, range);
                     }
                 }
             }
@@ -225,14 +224,13 @@ fn inner_calculate_v1(
                         .collect::<RangeStack>()
                         .length();
                 }
-                return 0.0;
+                0.0
             })
             .sum::<f64>()
             / full_arclength;
 
         // The number of seen objects.
         let seen = field_res
-            .clone()
             .elements
             .iter()
             .take_while(|circle| {
@@ -292,13 +290,10 @@ fn inner_calculate_v2(
 
     let full_circle: f64 = 2.0 * std::f64::consts::PI;
 
-    let (n_circles, _n_segments) =
-        circles
-            .iter()
-            .fold((0, 0), |(n_circles, n_segments), x| match x {
-                Element::Circle(_) => (n_circles + 1, n_segments),
-                Element::Segment(_) => (n_circles, n_segments + 1),
-            });
+    let n_circles = circles
+        .iter()
+        .filter(|x| matches!(x, Element::Circle(_)))
+        .count();
 
     // `n` circles have `2 * PI * n` angles in total.
     let full_arclength = full_circle * n_circles as f64;
@@ -308,7 +303,6 @@ fn inner_calculate_v2(
         let mut sensor =
             Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
         let rays = sensor.rays.clone();
-        // An immutable Field used for acquiring the subject circle's uuid.
         let field = Field::new(circles.clone(), resolution, width, height);
         // A mutable `Field` that's circle field is updated with every iteration.
         let mut field_res = field.clone();
@@ -326,7 +320,7 @@ fn inner_calculate_v2(
                 if let Some(Element::Circle(elem2)) = i2 {
                     if elem1.id == elem2.id {
                         let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                        field_res.update_stack(elem1.id.clone(), range);
+                        field_res.update_stack(&elem1.id, range);
                     }
                 }
             }
@@ -353,7 +347,7 @@ fn inner_calculate_v2(
                     if let Some(Element::Circle(elem2)) = i2 {
                         if elem1.id == elem2.id {
                             let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                            field_res.update_stack(elem1.id.clone(), range);
+                            field_res.update_stack(&elem1.id, range);
                             _hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
                         }
                     }
@@ -478,7 +472,7 @@ fn inner_calculate_v3(
                 if let Some(Element::Circle(elem2)) = i2 {
                     if elem1.id == elem2.id {
                         let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                        field_res.update_stack(elem1.id.clone(), range);
+                        field_res.update_stack(&elem1.id, range);
                     }
                 }
             }
@@ -502,7 +496,7 @@ fn inner_calculate_v3(
                     if let Some(Element::Circle(elem2)) = i2 {
                         if elem1.id == elem2.id {
                             let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                            field_res.update_stack(elem1.id.clone(), range);
+                            field_res.update_stack(&elem1.id, range);
                             _hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
                         }
                     }
@@ -535,7 +529,7 @@ fn inner_calculate_v3(
                         if let Some(Element::Circle(elem2)) = i2 {
                             if elem1.id == elem2.id {
                                 let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                                field_res.update_stack(elem1.id.clone(), range);
+                                field_res.update_stack(&elem1.id, range);
                                 _hmap2.entry(elem1.id.clone()).or_insert(vec![]).push(range);
                             }
                         }

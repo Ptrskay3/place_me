@@ -9,7 +9,10 @@ crate-type = ["cdylib"]
 
 
 [dependencies]
-pyo3 = { version = "0.15.1", features = ["extension-module"] }
+pyo3 = { version = "0.20.3", features = ["extension-module"] }
 rayon = "1.0.3"
-numpy = "0.15.1"
-uuid = { version = "0.8.2", features = ["v4"] }
+numpy = "0.20.0"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1

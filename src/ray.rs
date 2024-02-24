@@ -9,10 +9,12 @@ pub struct Ray {
 
 impl Ray {
     /// Return the ray at point `t`.
+    #[inline]
     pub fn at(&self, t: f64) -> Point {
         self.origin + t * self.direction
     }
 
+    #[inline]
     pub fn get_coeffs(&self) -> (f64, f64) {
         let x = self.direction.x - self.origin.x;
         let y = self.direction.y - self.origin.y;

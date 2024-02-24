@@ -19,11 +19,13 @@ impl Range {
         Range { start, end }
     }
 
+    #[inline]
     fn overlaps(&self, other: &Range) -> bool {
         (other.start >= self.start && other.start <= self.end)
             || (other.end >= self.start && other.end <= self.end)
     }
 
+    #[inline]
     fn merge(&mut self, other: &Range) {
         self.start = cmp::min_by(self.start, other.start, |x: &f64, y: &f64| {
             x.partial_cmp(y).unwrap()

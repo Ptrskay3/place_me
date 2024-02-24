@@ -8,18 +8,22 @@ pub struct Vector {
 }
 
 impl Vector {
+    #[inline]
     pub fn zero() -> Self {
         Self { x: 0., y: 0. }
     }
 
+    #[inline]
     pub fn length_squared(&self) -> f64 {
         self.x * self.x + self.y * self.y
     }
 
+    #[inline]
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
 
+    #[inline]
     pub fn norm(&self) -> Self {
         Self {
             x: -self.y,
@@ -27,6 +31,7 @@ impl Vector {
         }
     }
 
+    #[inline]
     pub fn normalize(&self) -> Self {
         let factor = 1.0 / self.length();
 
@@ -36,10 +41,12 @@ impl Vector {
         }
     }
 
+    #[inline]
     pub fn dot(&self, other: &Vector) -> f64 {
         self.x * other.x + self.y * other.y
     }
 
+    #[inline]
     pub fn as_point(&self) -> Point {
         Point {
             x: self.x,

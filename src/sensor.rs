@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use uuid::Uuid;
-
 use crate::{point::Point, rangestack::RangeStack, ray::Ray, vector::Vector};
 
 #[derive(Clone, Debug)]

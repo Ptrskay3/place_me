@@ -29,6 +29,7 @@ impl Segment {
         Self { p1, p2 }
     }
 
+    #[inline]
     pub fn get_coeffs(&self) -> (f64, f64) {
         let x = self.p2.x - self.p1.x;
         let y = self.p2.y - self.p1.y;
@@ -85,6 +86,7 @@ impl Circle {
         Range::new(lower, upper)
     }
 
+    #[inline]
     pub fn hit_angle(&self, ray: &Ray) -> f64 {
         let center = &self.center;
         let hit_radius = self.hit(ray).unwrap();
@@ -197,7 +199,7 @@ pub struct Intersection<'a> {
 }
 
 impl<'a> Intersection<'a> {
-    pub fn new<'b>(distance: f64, element: &'b Element) -> Intersection<'b> {
+    pub fn new(distance: f64, element: &Element) -> Intersection {
         if !distance.is_finite() {
             panic!("Intersection must have a finite distance.");
         }

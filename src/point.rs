@@ -9,13 +9,17 @@ pub struct Point {
 }
 
 impl Point {
+    #[inline]
     pub fn new(x: f64, y: f64) -> Self {
         Self { x, y }
     }
+
+    #[inline]
     pub fn zero() -> Self {
         Self { x: 0., y: 0. }
     }
 
+    #[inline]
     pub fn distance_from(&self, other: &Point) -> f64 {
         let dx = self.x - other.x;
         let dy = self.y - other.y;
@@ -23,6 +27,7 @@ impl Point {
         (dx * dx + dy * dy).sqrt()
     }
 
+    #[inline]
     pub fn is_aabb(&self) -> bool {
         self.x >= 0. && self.y >= 0. && self.x <= 3840. && self.y <= 1080.
     }

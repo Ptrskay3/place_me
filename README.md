@@ -2,7 +2,7 @@
 
 ### You'll need:
 
-- Rust (`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`, you might need to `rustup override set nightly` inside the project folder)
+- Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
 
 - Python
 
@@ -11,25 +11,25 @@
 Create a Python virtual environment,
 
 ```bash
-python3 -m venv <my_env_name>
+python3 -m venv kfi
 ```
 
 activate it
 
 ```bash
-source <my_env_name>/bin/activate
+source kfi/bin/activate
 ```
 
 Install Python dependencies
 
 ```bash
-pip3 install numpy scipy matplotlib scikit-learn scikit-image opencv-python jupyterlab ipykernel maturin tqdm
+pip3 install numpy scipy matplotlib scikit-learn scikit-image opencv-python jupyterlab ipykernel maturin tqdm seaborn
 ```
 
 Register the virtual environment in Jupyter kernels
 
 ```bash
-python3 -m ipykernel install --user --name=<my_env_name>
+python3 -m ipykernel install --user --name=kfi
 ```
 
 Compile the Rust project and install it in the current virtual env

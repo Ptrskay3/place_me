@@ -65,7 +65,7 @@ fn main() {
                 if let Some(Element::Circle(elem2)) = i2 {
                     if elem1.id == elem2.id {
                         let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                        field_res.update_stack(elem1.id.clone(), range);
+                        field_res.update_stack(&elem1.id, range);
                     }
                 }
             }
@@ -85,7 +85,7 @@ fn main() {
                     if let Some(Element::Circle(elem2)) = i2 {
                         if elem1.id == elem2.id {
                             let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                            field_res.update_stack(elem1.id.clone(), range);
+                            field_res.update_stack(&elem1.id, range);
                         }
                     }
                 }

@@ -28,17 +28,11 @@ impl Field {
             .min_by(|i1, i2| i1.distance.partial_cmp(&i2.distance).unwrap())
     }
 
-    pub fn update_stack(&mut self, id: String, range: Range) {
-        // unwrapping here is ok, because the caller ensures that the id is valid
-        let circle: &mut Element = self
-            .elements
-            .iter_mut()
-            .find(|c| match c {
-                Element::Circle(c) => c.id == id,
-                _ => false,
-            })
-            .unwrap();
-        if let Element::Circle(c) = circle {
+    pub fn update_stack(&mut self, id: &str, range: Range) {
+        if let Some(Element::Circle(c)) = self.elements.iter_mut().find(|c| match c {
+            Element::Circle(c) => c.id == id,
+            _ => false,
+        }) {
             c.range_stack.wrapping_add(&range)
         }
     }
@@ -46,12 +40,9 @@ impl Field {
     pub fn get_coverage(&self) -> HashMap<String, RangeStack> {
         let mut coverages = HashMap::new();
         for circle in &self.elements {
-            match circle {
-                Element::Circle(c) => {
-                    let rs = c.range_stack.ranges.iter().collect::<RangeStack>();
-                    coverages.insert(c.id.clone(), rs);
-                }
-                _ => {}
+            if let Element::Circle(c) = circle {
+                let rs = c.range_stack.ranges.iter().collect::<RangeStack>();
+                coverages.insert(c.id.clone(), rs);
             }
         }
         coverages
