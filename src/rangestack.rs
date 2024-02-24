@@ -18,6 +18,12 @@ impl Range {
     pub fn new(start: f64, end: f64) -> Range {
         Range { start, end }
     }
+    pub fn empty() -> Range {
+        Range {
+            start: 0.0,
+            end: 0.0,
+        }
+    }
 
     #[inline]
     fn overlaps(&self, other: &Range) -> bool {

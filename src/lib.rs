@@ -302,7 +302,6 @@ fn inner_calculate_v2(
         // Place a sensor at the current coordinate pair.
         let mut sensor =
             Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
-        let rays = sensor.rays.clone();
         let field = Field::new(circles.clone(), resolution, width, height);
         // A mutable `Field` that's circle field is updated with every iteration.
         let mut field_res = field.clone();
@@ -313,7 +312,7 @@ fn inner_calculate_v2(
         // The idea is to check whether we hit something with the first ray, then iterating until
         // the same object is hit again. The coverage between last one that's hitting the same object
         // and the first should give us the result and save us from calculating every consecutive hit.
-        rays.windows(2).for_each(|pair| {
+        sensor.rays.windows(2).for_each(|pair| {
             let i1 = cast_ray(&field, &pair[0]);
             let i2 = cast_ray(&field, &pair[1]);
             if let Some(Element::Circle(elem1)) = i1 {
@@ -335,12 +334,10 @@ fn inner_calculate_v2(
         x_range.iter().zip(y_range.clone()).for_each(|(&x2, y2)| {
             let mut sensor2 = Sensor::new_at(&point::Point::new(x2 as f64, y2 as f64))
                 .with_resolution(resolution);
-            let rays2 = sensor2.rays.clone();
-            let mut _hmap = HashMap::new();
             let mut hmap = HashMap::new();
 
             // Same logic as above, just for the second sensor.
-            rays2.windows(2).for_each(|pair| {
+            sensor2.rays.windows(2).for_each(|pair| {
                 let i1 = cast_ray(&field, &pair[0]);
                 let i2 = cast_ray(&field, &pair[1]);
                 if let Some(Element::Circle(elem1)) = i1 {
@@ -348,21 +345,21 @@ fn inner_calculate_v2(
                         if elem1.id == elem2.id {
                             let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
                             field_res.update_stack(&elem1.id, range);
-                            _hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
+                            hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
                         }
                     }
                 }
             });
-
-            for (k, v) in _hmap.iter() {
-                let mut rs = RangeStack::new();
-                for range in v {
-                    rs.wrapping_add(range);
-                }
-
-                hmap.insert(k.clone(), rs.ranges.iter().collect::<RangeStack>());
-            }
-            sensor2.coverages = hmap;
+            sensor2.coverages = hmap
+                .into_iter()
+                .map(|(k, v)| {
+                    let mut rs = RangeStack::new();
+                    for range in v {
+                        rs.wrapping_add(&range);
+                    }
+                    (k, rs)
+                })
+                .collect::<HashMap<_, _>>();
 
             // Get the full coverage out of the current state.
             let covered_len = field_res
@@ -447,13 +444,10 @@ fn inner_calculate_v3(
 
     let full_circle: f64 = 2.0 * std::f64::consts::PI;
 
-    let (n_circles, _n_segments) =
-        circles
-            .iter()
-            .fold((0, 0), |(n_circles, n_segments), x| match x {
-                Element::Circle(_) => (n_circles + 1, n_segments),
-                Element::Segment(_) => (n_circles, n_segments + 1),
-            });
+    let n_circles = circles
+        .iter()
+        .filter(|x| matches!(x, Element::Circle(_)))
+        .count();
 
     // `n` circles have `2 * PI * n` angles in total.
     let full_arclength = full_circle * n_circles as f64;
