@@ -298,46 +298,20 @@ fn inner_calculate_v2(
     // `n` circles have `2 * PI * n` angles in total.
     let full_arclength = full_circle * n_circles as f64;
 
-    x_range.par_iter().zip(y_range.clone()).for_each(|(&x, y)| {
-        // Place a sensor at the current coordinate pair.
-        let mut sensor =
-            Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
-        let field = Field::new(circles.clone(), resolution, width, height);
-        // A mutable `Field` that's circle field is updated with every iteration.
-        let mut field_res = field.clone();
+    x_range
+        .par_iter()
+        .zip(y_range.clone())
+        .enumerate()
+        .for_each(|(i, (&x, y))| {
+            // Place a sensor at the current coordinate pair.
+            let mut sensor =
+                Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
+            let field = Field::new(circles.clone(), resolution, width, height);
+            // A mutable `Field` that's circle field is updated with every iteration.
+            let mut field_res = field.clone();
 
-        // Iterating over the rays of the sensor in pairs.
-        // We check whether the pair intersects the same object, and we accumulate the coverage.
-        // TODO: This can be easily optimized later with `std::iter::take_while`.
-        // The idea is to check whether we hit something with the first ray, then iterating until
-        // the same object is hit again. The coverage between last one that's hitting the same object
-        // and the first should give us the result and save us from calculating every consecutive hit.
-        sensor.rays.windows(2).for_each(|pair| {
-            let i1 = cast_ray(&field, &pair[0]);
-            let i2 = cast_ray(&field, &pair[1]);
-            if let Some(Element::Circle(elem1)) = i1 {
-                if let Some(Element::Circle(elem2)) = i2 {
-                    if elem1.id == elem2.id {
-                        let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                        field_res.update_stack(&elem1.id, range);
-                    }
-                }
-            }
-        });
-
-        sensor.coverages = field_res.get_coverage();
-
-        // Copy the state we have in the current iteration for the first sensor. We'll restore this state
-        // inside the seconds sensor's loop on every iteration.
-        let restore = field_res.elements.clone();
-
-        x_range.iter().zip(y_range.clone()).for_each(|(&x2, y2)| {
-            let mut sensor2 = Sensor::new_at(&point::Point::new(x2 as f64, y2 as f64))
-                .with_resolution(resolution);
-            let mut hmap = HashMap::new();
-
-            // Same logic as above, just for the second sensor.
-            sensor2.rays.windows(2).for_each(|pair| {
+            // Iterating over the rays of the sensor in pairs.
+            sensor.rays.windows(2).for_each(|pair| {
                 let i1 = cast_ray(&field, &pair[0]);
                 let i2 = cast_ray(&field, &pair[1]);
                 if let Some(Element::Circle(elem1)) = i1 {
@@ -345,70 +319,100 @@ fn inner_calculate_v2(
                         if elem1.id == elem2.id {
                             let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
                             field_res.update_stack(&elem1.id, range);
-                            hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
                         }
                     }
                 }
             });
-            sensor2.coverages = hmap
-                .into_iter()
-                .map(|(k, v)| {
-                    let mut rs = RangeStack::new();
-                    for range in v {
-                        rs.wrapping_add(&range);
-                    }
-                    (k, rs)
-                })
-                .collect::<HashMap<_, _>>();
 
-            // Get the full coverage out of the current state.
-            let covered_len = field_res
-                .elements
+            sensor.coverages = field_res.get_coverage();
+
+            // Copy the state we have in the current iteration for the first sensor. We'll restore this state
+            // inside the seconds sensor's loop on every iteration.
+            let restore = field_res.elements.clone();
+
+            x_range
                 .iter()
-                .map(|circle| {
-                    if let Element::Circle(c) = circle {
-                        c.range_stack
-                            .ranges
-                            .par_iter()
-                            .collect::<RangeStack>()
-                            .length()
-                    } else {
-                        0.0
+                .zip(y_range.clone())
+                .skip(i + 1)
+                .for_each(|(&x2, y2)| {
+                    let mut sensor2 = Sensor::new_at(&point::Point::new(x2 as f64, y2 as f64))
+                        .with_resolution(resolution);
+                    let mut hmap = HashMap::new();
+
+                    // Same logic as above, just for the second sensor.
+                    sensor2.rays.windows(2).for_each(|pair| {
+                        let i1 = cast_ray(&field, &pair[0]);
+                        let i2 = cast_ray(&field, &pair[1]);
+                        if let Some(Element::Circle(elem1)) = i1 {
+                            if let Some(Element::Circle(elem2)) = i2 {
+                                if elem1.id == elem2.id {
+                                    let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
+                                    field_res.update_stack(&elem1.id, range);
+                                    hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
+                                }
+                            }
+                        }
+                    });
+                    sensor2.coverages = hmap
+                        .into_iter()
+                        .map(|(k, v)| {
+                            let mut rs = RangeStack::new();
+                            for range in v {
+                                rs.wrapping_add(&range);
+                            }
+                            (k, rs)
+                        })
+                        .collect::<HashMap<_, _>>();
+
+                    // Get the full coverage out of the current state.
+                    let covered_len = field_res
+                        .elements
+                        .iter()
+                        .map(|circle| {
+                            if let Element::Circle(c) = circle {
+                                c.range_stack
+                                    .ranges
+                                    .par_iter()
+                                    .collect::<RangeStack>()
+                                    .length()
+                            } else {
+                                0.0
+                            }
+                        })
+                        .sum::<f64>()
+                        / full_arclength;
+
+                    // The number of seen objects.
+                    let seen = field_res
+                        .clone()
+                        .elements
+                        .iter()
+                        .take_while(|circle| {
+                            if let Element::Circle(c) = circle {
+                                !c.range_stack.is_empty()
+                            } else {
+                                false
+                            }
+                        })
+                        .count();
+
+                    let cov = seen as f64 + covered_len * n_circles as f64;
+
+                    // Set the results if the coverage is equal or higher than the previous one.
+                    let report = report.clone();
+                    let mut result = report.lock().unwrap();
+                    if cov > result.max_coverage {
+                        result.sensor_coverages =
+                            vec![sensor.coverages.clone(), sensor2.coverages.clone()];
+                        result.max_coverage = cov;
+                        result.sensor_positions = vec![
+                            point::Point::new(x as f64, y as f64),
+                            point::Point::new(x2 as f64, y2 as f64),
+                        ];
                     }
-                })
-                .sum::<f64>()
-                / full_arclength;
-
-            // The number of seen objects.
-            let seen = field_res
-                .clone()
-                .elements
-                .iter()
-                .take_while(|circle| {
-                    if let Element::Circle(c) = circle {
-                        !c.range_stack.is_empty()
-                    } else {
-                        false
-                    }
-                })
-                .count();
-
-            let cov = seen as f64 + covered_len * n_circles as f64;
-
-            // Set the results if the coverage is equal or higher than the previous one.
-            let report = report.clone();
-            let mut result = report.lock().unwrap();
-            if cov > result.max_coverage {
-                result.sensor_coverages = vec![sensor.coverages.clone(), sensor2.coverages.clone()];
-                result.max_coverage = cov;
-                result.sensor_positions = vec![
-                    point::Point::new(x as f64, y as f64),
-                    point::Point::new(x2 as f64, y2 as f64),
-                ];
-            }
-            field_res.elements = restore.clone();
+                    field_res.elements = restore.clone();
+                });
         });
-    });
 
     // Print report at the end, if RUST_LOG environment variable is set.
     let rep = report.lock().unwrap();
@@ -452,38 +456,18 @@ fn inner_calculate_v3(
     // `n` circles have `2 * PI * n` angles in total.
     let full_arclength = full_circle * n_circles as f64;
 
-    x_range.par_iter().zip(y_range.clone()).for_each(|(&x, y)| {
-        let mut sensor =
-            Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
-        let rays = sensor.rays.clone();
-        let field = Field::new(circles.clone(), resolution, width, height);
-        let mut field_res = field.clone();
+    x_range
+        .par_iter()
+        .zip(y_range.clone())
+        .enumerate()
+        .for_each(|(i, (&x, y))| {
+            let mut sensor =
+                Sensor::new_at(&point::Point::new(x as f64, y as f64)).with_resolution(resolution);
+            let rays = sensor.rays.clone();
+            let field = Field::new(circles.clone(), resolution, width, height);
+            let mut field_res = field.clone();
 
-        rays.windows(2).for_each(|pair| {
-            let i1 = cast_ray(&field, &pair[0]);
-            let i2 = cast_ray(&field, &pair[1]);
-            if let Some(Element::Circle(elem1)) = i1 {
-                if let Some(Element::Circle(elem2)) = i2 {
-                    if elem1.id == elem2.id {
-                        let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                        field_res.update_stack(&elem1.id, range);
-                    }
-                }
-            }
-        });
-
-        sensor.coverages = field_res.get_coverage();
-
-        let restore = field_res.elements.clone();
-
-        x_range.iter().zip(y_range.clone()).for_each(|(&x2, y2)| {
-            let mut sensor2 = Sensor::new_at(&point::Point::new(x2 as f64, y2 as f64))
-                .with_resolution(resolution);
-            let rays2 = sensor2.rays.clone();
-            let mut _hmap = HashMap::new();
-            let mut hmap = HashMap::new();
-
-            rays2.windows(2).for_each(|pair| {
+            rays.windows(2).for_each(|pair| {
                 let i1 = cast_ray(&field, &pair[0]);
                 let i2 = cast_ray(&field, &pair[1]);
                 if let Some(Element::Circle(elem1)) = i1 {
@@ -491,108 +475,146 @@ fn inner_calculate_v3(
                         if elem1.id == elem2.id {
                             let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
                             field_res.update_stack(&elem1.id, range);
-                            _hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
                         }
                     }
                 }
             });
 
-            for (k, v) in _hmap.iter() {
-                let mut rs = RangeStack::new();
-                for range in v {
-                    rs.wrapping_add(range);
-                }
+            sensor.coverages = field_res.get_coverage();
 
-                hmap.insert(k.clone(), rs.ranges.iter().collect::<RangeStack>());
-            }
-            sensor2.coverages = hmap;
+            let restore = field_res.elements.clone();
 
-            let restore2 = field_res.elements.clone();
+            x_range
+                .iter()
+                .zip(y_range.clone())
+                .skip(i + 1)
+                .enumerate()
+                .for_each(|(j, (&x2, y2))| {
+                    let mut sensor2 = Sensor::new_at(&point::Point::new(x2 as f64, y2 as f64))
+                        .with_resolution(resolution);
+                    let rays2 = sensor2.rays.clone();
+                    let mut _hmap = HashMap::new();
+                    let mut hmap = HashMap::new();
 
-            x_range.iter().zip(y_range.clone()).for_each(|(&x3, y3)| {
-                let mut sensor3 = Sensor::new_at(&point::Point::new(x3 as f64, y3 as f64))
-                    .with_resolution(resolution);
-                let rays3 = sensor3.rays.clone();
-                let mut _hmap2 = HashMap::new();
-                let mut hmap2 = HashMap::new();
-
-                rays3.windows(2).for_each(|pair| {
-                    let i1 = cast_ray(&field, &pair[0]);
-                    let i2 = cast_ray(&field, &pair[1]);
-                    if let Some(Element::Circle(elem1)) = i1 {
-                        if let Some(Element::Circle(elem2)) = i2 {
-                            if elem1.id == elem2.id {
-                                let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
-                                field_res.update_stack(&elem1.id, range);
-                                _hmap2.entry(elem1.id.clone()).or_insert(vec![]).push(range);
+                    rays2.windows(2).for_each(|pair| {
+                        let i1 = cast_ray(&field, &pair[0]);
+                        let i2 = cast_ray(&field, &pair[1]);
+                        if let Some(Element::Circle(elem1)) = i1 {
+                            if let Some(Element::Circle(elem2)) = i2 {
+                                if elem1.id == elem2.id {
+                                    let range = elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
+                                    field_res.update_stack(&elem1.id, range);
+                                    _hmap.entry(elem1.id.clone()).or_insert(vec![]).push(range);
+                                }
                             }
                         }
+                    });
+
+                    for (k, v) in _hmap.iter() {
+                        let mut rs = RangeStack::new();
+                        for range in v {
+                            rs.wrapping_add(range);
+                        }
+
+                        hmap.insert(k.clone(), rs.ranges.iter().collect::<RangeStack>());
                     }
+                    sensor2.coverages = hmap;
+
+                    let restore2 = field_res.elements.clone();
+
+                    x_range
+                        .iter()
+                        .zip(y_range.clone())
+                        .skip(j + 1)
+                        .for_each(|(&x3, y3)| {
+                            let mut sensor3 =
+                                Sensor::new_at(&point::Point::new(x3 as f64, y3 as f64))
+                                    .with_resolution(resolution);
+                            let rays3 = sensor3.rays.clone();
+                            let mut _hmap2 = HashMap::new();
+                            let mut hmap2 = HashMap::new();
+
+                            rays3.windows(2).for_each(|pair| {
+                                let i1 = cast_ray(&field, &pair[0]);
+                                let i2 = cast_ray(&field, &pair[1]);
+                                if let Some(Element::Circle(elem1)) = i1 {
+                                    if let Some(Element::Circle(elem2)) = i2 {
+                                        if elem1.id == elem2.id {
+                                            let range =
+                                                elem1.get_range_for_ray_pair(&pair[0], &pair[1]);
+                                            field_res.update_stack(&elem1.id, range);
+                                            _hmap2
+                                                .entry(elem1.id.clone())
+                                                .or_insert(vec![])
+                                                .push(range);
+                                        }
+                                    }
+                                }
+                            });
+
+                            for (k2, v2) in _hmap2.iter() {
+                                let mut rs = RangeStack::new();
+                                for range in v2 {
+                                    rs.wrapping_add(range);
+                                }
+
+                                hmap2.insert(k2.clone(), rs.ranges.iter().collect::<RangeStack>());
+                            }
+                            sensor3.coverages = hmap2;
+
+                            let covered_len = field_res
+                                .elements
+                                .iter()
+                                .map(|circle| {
+                                    if let Element::Circle(c) = circle {
+                                        c.range_stack
+                                            .ranges
+                                            .par_iter()
+                                            .collect::<RangeStack>()
+                                            .length()
+                                    } else {
+                                        0.0
+                                    }
+                                })
+                                .sum::<f64>()
+                                / full_arclength;
+
+                            let seen = field_res
+                                .clone()
+                                .elements
+                                .iter()
+                                .take_while(|circle| {
+                                    if let Element::Circle(c) = circle {
+                                        !c.range_stack.is_empty()
+                                    } else {
+                                        false
+                                    }
+                                })
+                                .count();
+
+                            let cov = seen as f64 + covered_len * n_circles as f64;
+
+                            let report = report.clone();
+                            let mut result = report.lock().unwrap();
+                            if cov > result.max_coverage {
+                                result.max_coverage = cov;
+                                result.sensor_coverages = vec![
+                                    sensor.coverages.clone(),
+                                    sensor2.coverages.clone(),
+                                    sensor3.coverages.clone(),
+                                ];
+
+                                result.sensor_positions = vec![
+                                    point::Point::new(x as f64, y as f64),
+                                    point::Point::new(x2 as f64, y2 as f64),
+                                    point::Point::new(x3 as f64, y3 as f64),
+                                ];
+                            }
+                            field_res.elements = restore2.clone();
+                        });
+                    field_res.elements = restore.clone();
                 });
-
-                for (k2, v2) in _hmap2.iter() {
-                    let mut rs = RangeStack::new();
-                    for range in v2 {
-                        rs.wrapping_add(range);
-                    }
-
-                    hmap2.insert(k2.clone(), rs.ranges.iter().collect::<RangeStack>());
-                }
-                sensor3.coverages = hmap2;
-
-                let covered_len = field_res
-                    .elements
-                    .iter()
-                    .map(|circle| {
-                        if let Element::Circle(c) = circle {
-                            c.range_stack
-                                .ranges
-                                .par_iter()
-                                .collect::<RangeStack>()
-                                .length()
-                        } else {
-                            0.0
-                        }
-                    })
-                    .sum::<f64>()
-                    / full_arclength;
-
-                let seen = field_res
-                    .clone()
-                    .elements
-                    .iter()
-                    .take_while(|circle| {
-                        if let Element::Circle(c) = circle {
-                            !c.range_stack.is_empty()
-                        } else {
-                            false
-                        }
-                    })
-                    .count();
-
-                let cov = seen as f64 + covered_len * n_circles as f64;
-
-                let report = report.clone();
-                let mut result = report.lock().unwrap();
-                if cov > result.max_coverage {
-                    result.max_coverage = cov;
-                    result.sensor_coverages = vec![
-                        sensor.coverages.clone(),
-                        sensor2.coverages.clone(),
-                        sensor3.coverages.clone(),
-                    ];
-
-                    result.sensor_positions = vec![
-                        point::Point::new(x as f64, y as f64),
-                        point::Point::new(x2 as f64, y2 as f64),
-                        point::Point::new(x3 as f64, y3 as f64),
-                    ];
-                }
-                field_res.elements = restore2.clone();
-            });
-            field_res.elements = restore.clone();
         });
-    });
 
     let rep = report.lock().unwrap();
     if rust_log_is_set() {
